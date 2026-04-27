@@ -145,7 +145,14 @@ For findings the user validates:
 
 **Option A: File an issue first** (recommended for medium+ changes or repos that require it):
 
-Help the user write an issue description (they write it, LLM reviews):
+Help the user write an issue description (they write it, LLM reviews).
+
+**Issue writing rules:**
+- Title: what's wrong, in under 10 words. Not "Issue with..." — state the problem directly
+- Body: reproduction steps or code reference, expected vs actual behavior, that's it
+- No filler, no "I believe", no "it seems like" — state facts
+- No AI jargon: "comprehensive", "robust", "fundamental" — cut all of it
+- If you can't describe the issue in 5 lines, you don't understand it well enough yet
 
 ```bash
 gh issue create -R {owner}/{repo} \

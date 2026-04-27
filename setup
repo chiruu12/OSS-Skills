@@ -15,7 +15,7 @@ for arg in "$@"; do
       echo "  --local    Install skills relative to current project (.claude/skills/)"
       echo "             instead of global (~/.claude/skills/)"
       echo ""
-      echo "OSS-Skills: Six Claude Code skills for open source contributors."
+      echo "OSS-Skills: Eight Claude Code skills for open source contributors."
       echo "https://github.com/chiruu12/OSS-Skills"
       exit 0
       ;;
@@ -75,9 +75,11 @@ SKILLS=(
   oss-submit-pr
   oss-post-pr
   oss-find-real-issues
+  oss-find-bounty
+  oss-bounty-prep
 )
 
-echo "Installing 6 skills..."
+echo "Installing 8 skills..."
 
 for skill in "${SKILLS[@]}"; do
   skill_target="$TARGET_DIR/$skill"
@@ -95,7 +97,8 @@ if [ ! -d "$CONFIG_DIR" ]; then
   "languages": [],
   "experience": "beginner",
   "interests": [],
-  "strict_gates": true
+  "strict_gates": true,
+  "min_bounty": 0
 }
 CONF
   echo ""
@@ -104,7 +107,7 @@ CONF
 fi
 
 echo ""
-echo "Done. 6 skills installed."
+echo "Done. 8 skills installed."
 echo ""
 echo "Available skills:"
 echo "  /oss-find-issue          Find unclaimed issues matching your skills"
@@ -113,5 +116,7 @@ echo "  /oss-contribute          Research the issue, you write the code"
 echo "  /oss-submit-pr           Submit a PR following repo guidelines"
 echo "  /oss-post-pr             Handle PR review feedback"
 echo "  /oss-find-real-issues    Find real code issues not in the tracker"
+echo "  /oss-find-bounty         Find paid bounty issues across platforms"
+echo "  /oss-bounty-prep         Understand bounty terms and scope before committing"
 echo ""
-echo "Start with: /oss-find-issue"
+echo "Start with: /oss-find-issue or /oss-find-bounty"

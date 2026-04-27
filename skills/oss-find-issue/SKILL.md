@@ -149,6 +149,8 @@ Once the user has chosen AND explained their reasoning:
 gh issue comment {number} -R {owner}/{repo} --body "Hi, I'd like to work on this issue. I'll submit a PR within [user-specified timeframe]."
 ```
 
+**Keep the claim comment short.** One sentence is enough. Don't write a paragraph about your background, your approach, or how excited you are. Maintainers see dozens of these — concise signals competence.
+
 ## Related Skills
 
 - **Next step**: → `oss-prep-to-contribute` — prepare to actually contribute (set up dev env, understand codebase, knowledge check)

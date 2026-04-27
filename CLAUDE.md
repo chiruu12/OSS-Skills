@@ -4,19 +4,21 @@
 
 ```
 OSS-Skills/
-├── skills/                    # All 6 skills
-│   ├── oss-find-issue/        # Find unclaimed issues matching user skills
-│   ├── oss-prep-to-contribute/# Check eligibility, knowledge gaps, educate
-│   ├── oss-contribute/        # Deep research, user thinks and codes
-│   ├── oss-submit-pr/         # Pre-flight checks, submit PR
-│   ├── oss-post-pr/           # Handle PR review feedback
-│   └── oss-find-real-issues/  # Find code issues not in the tracker
-├── docs/                      # Documentation
-├── setup                      # Install script (bash)
-├── CLAUDE.md                  # This file
-├── CONTRIBUTING.md            # How to contribute
-├── LICENSE                    # MIT
-└── README.md                  # Project overview + install + usage
+├── skills/                        # All 8 skills
+│   ├── oss-find-issue/            # Find unclaimed issues matching user skills
+│   ├── oss-prep-to-contribute/    # Check eligibility, knowledge gaps, educate
+│   ├── oss-contribute/            # Deep research, user thinks and codes
+│   ├── oss-submit-pr/             # Pre-flight checks, submit PR
+│   ├── oss-post-pr/               # Handle PR review feedback
+│   ├── oss-find-real-issues/      # Find code issues not in the tracker
+│   ├── oss-find-bounty/           # Find paid issues across platforms
+│   └── oss-bounty-prep/           # Bounty terms, payout history, scope assessment
+├── docs/                          # Documentation
+├── setup                          # Install script (bash)
+├── CLAUDE.md                      # This file
+├── CONTRIBUTING.md                # How to contribute
+├── LICENSE                        # MIT
+└── README.md                      # Project overview + install + usage
 ```
 
 ## Skill format
@@ -37,7 +39,7 @@ Sections within each SKILL.md:
 3. **Prerequisites** — what the user needs before invoking
 4. **Process** — numbered steps with clear phases
 5. **Thinking Gates** — points where user must articulate understanding
-6. **Related Skills** — how this connects to the other 5 skills
+6. **Related Skills** — how this connects to the other 7 skills
 7. **Anti-patterns** — what this skill explicitly does NOT do
 
 ## Core principle
@@ -48,6 +50,7 @@ Sections within each SKILL.md:
 
 Skills reference each other at handoff points:
 - `oss-find-issue` → `oss-prep-to-contribute`
+- `oss-find-bounty` → `oss-bounty-prep` → `oss-prep-to-contribute`
 - `oss-prep-to-contribute` → `oss-contribute`
 - `oss-contribute` → `oss-submit-pr`
 - `oss-submit-pr` → `oss-post-pr`

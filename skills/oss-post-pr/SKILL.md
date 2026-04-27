@@ -129,6 +129,14 @@ The user fixes each blocking comment and responds to questions. During this phas
 - Write review response comments for the user
 - Dismiss suggestions without the user evaluating them
 
+**Review response writing rules** (enforce when reviewing user's draft responses):
+- Answer the question directly. "I chose X because Y" — done
+- No apologizing: "Sorry for the confusion" is noise. Just explain or fix
+- No filler: "Great catch!" / "Thanks for pointing that out!" — one line max, then substance
+- No AI jargon: "comprehensive", "robust", "leverages" — cut all of it
+- If the response is longer than the reviewer's comment, it's probably too long
+- Match the reviewer's tone: if they wrote two words, you don't need two paragraphs
+
 ### 7. Track progress
 
 Keep a running status:

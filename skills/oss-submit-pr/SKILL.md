@@ -123,17 +123,26 @@ Wait for the user to write it.
 
 ### 6. Review the PR description
 
-Once the user has written their description, review it:
+Once the user has written their description, review it for **conciseness and clarity**:
 
 - Does it link the issue? ("Fixes #{number}")
 - Does it follow the repo's PR template (if one exists)?
-- Is it clear and concise? (maintainers review dozens of PRs)
-- Does it explain non-obvious decisions?
+- Is it **short and direct**? Maintainers review dozens of PRs — they skim
+- Does it explain non-obvious decisions **without over-explaining obvious ones**?
 - Does it mention how the change was tested?
+
+**Writing rules for PR descriptions:**
+- Lead with what changed, not why you're writing
+- One sentence per point. No paragraphs where a bullet works
+- No filler: "This PR addresses the issue where..." → "Fixes null check in auth handler"
+- No AI jargon: "comprehensive", "robust", "leverages", "utilizing" — cut all of it
+- No self-narration: "I noticed that..." / "After investigating..." — just state the facts
+- Technical terms are fine. Buzzwords are not
+- If the PR template asks for something, answer it. Don't add extra sections
 
 Give specific feedback:
 
-> "Your description is good, but you should mention that you chose approach X over Y because of {reason from the investigation}. That helps reviewers understand the decision."
+> "Your description is good, but trim the first paragraph — the reviewer doesn't need the backstory. Lead with what changed."
 
 Don't rewrite it — give feedback and let the user revise.
 

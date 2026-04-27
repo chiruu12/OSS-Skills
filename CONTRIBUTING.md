@@ -47,6 +47,7 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
 - **Don't make skills write code for users.** This is the core principle. If your change has the LLM generating implementation code, it will be rejected.
 - **Don't remove thinking gates.** They're the whole point.
 - **Don't add skills that are generic Claude Code features.** These skills are specifically for open source contribution workflows.
+- **Don't add AI jargon to any skill output.** No "comprehensive", "robust", "leverages", "utilizing". PR descriptions, issue text, and review responses must be concise and direct. This is enforced in every skill that produces external-facing text.
 
 ## Testing
 
