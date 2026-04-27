@@ -12,7 +12,7 @@ You found a bounty. Before you write a single line of code, understand exactly w
 
 ## Purpose
 
-Bounties are more structured than regular contributions — there's money involved, which means clearer acceptance criteria but also stricter rules. This skill reads every relevant document, checks for hidden requirements, and makes sure you know what you're signing up for before you invest time. It also checks whether the bounty has a history of paying out or leaving contributors hanging.
+Bounties are more structured than regular contributions - there's money involved, which means clearer acceptance criteria but also stricter rules. This skill reads every relevant document, checks for hidden requirements, and makes sure you know what you're signing up for before you invest time. It also checks whether the bounty has a history of paying out or leaving contributors hanging.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ Extract and present:
 **Posted by**: {author} ({authorAssociation})
 **Posted date**: {date}
 **Deadline**: {date or "none stated"}
-**Acceptance criteria**: {what constitutes "done" — from the issue description}
+**Acceptance criteria**: {what constitutes "done" - from the issue description}
 **Payment method**: {platform escrow / direct / crypto / unclear}
 **Requires approval to start**: {yes / no / unclear}
 ```
@@ -81,7 +81,7 @@ If zero evidence of past payouts, **warn the user**: "This repo has bounty label
 
 ### 4. Read contribution requirements
 
-Same as `oss-prep-to-contribute` — but with bounty-specific additions:
+Same as `oss-prep-to-contribute` - but with bounty-specific additions:
 
 ```bash
 gh api repos/{owner}/{repo}/contents/CONTRIBUTING.md --jq '.content' | base64 -d 2>/dev/null
@@ -124,25 +124,25 @@ Based on the bounty terms and codebase analysis:
 **What needs to change**: {specific files/modules}
 **Estimated effort**: {hours}
 **Key risks**:
-- {risk 1 — e.g., "acceptance criteria are vague — 'improved performance' without a benchmark target"}
-- {risk 2 — e.g., "touches auth module — high scrutiny area, expect thorough review"}
+- {risk 1 - e.g., "acceptance criteria are vague - 'improved performance' without a benchmark target"}
+- {risk 2 - e.g., "touches auth module - high scrutiny area, expect thorough review"}
 **Missing from the bounty description**: {anything ambiguous or unstated}
 **Questions to ask maintainer before starting**: {if any}
 ```
 
-### 7. Thinking gate — user commits or walks
+### 7. Thinking gate - user commits or walks
 
 > "Here's what I found about this bounty. Before you start:
 > 1. Are the acceptance criteria clear enough that you'd know when you're done?
 > 2. Is the effective rate (${amount} for ~{hours} of work) worth your time?
-> 3. Are there any red flags — unclear terms, no payout history, competing submissions?
+> 3. Are there any red flags - unclear terms, no payout history, competing submissions?
 > 4. What's your plan if the maintainer moves the goalposts after you submit?"
 
 The user must decide whether to proceed. If proceeding:
 
 - If platform requires registration, help the user register
 - If approval is needed before starting, draft a comment (user writes, LLM reviews)
-- Comment claiming the bounty (keep it short — one sentence)
+- Comment claiming the bounty (keep it short - one sentence)
 
 ```bash
 gh issue comment {number} -R {owner}/{repo} --body "I'd like to work on this bounty. Will submit a PR within [timeframe]."
@@ -150,14 +150,14 @@ gh issue comment {number} -R {owner}/{repo} --body "I'd like to work on this bou
 
 ## Related Skills
 
-- **Previous step**: ← `oss-find-bounty` — find the bounty
-- **Next step**: → `oss-prep-to-contribute` — set up the dev environment and understand the codebase
+- **Previous step**: ← `oss-find-bounty` - find the bounty
+- **Next step**: → `oss-prep-to-contribute` - set up the dev environment and understand the codebase
 - **Then**: → `oss-contribute` → `oss-submit-pr` → `oss-post-pr` (standard workflow)
 
 ## Anti-patterns
 
-- **DO NOT** start working before verifying payout history — protect the user's time
-- **DO NOT** ignore competing submissions — if someone else is actively working on it, the user should know
-- **DO NOT** gloss over vague acceptance criteria — ambiguity is where bounty disputes happen
-- **DO NOT** let the user skip the scope assessment — underestimating effort on a bounty leads to abandoned PRs
-- **DO NOT** write the claim comment for the user — they write it, keep it to one sentence
+- **DO NOT** start working before verifying payout history - protect the user's time
+- **DO NOT** ignore competing submissions - if someone else is actively working on it, the user should know
+- **DO NOT** gloss over vague acceptance criteria - ambiguity is where bounty disputes happen
+- **DO NOT** let the user skip the scope assessment - underestimating effort on a bounty leads to abandoned PRs
+- **DO NOT** write the claim comment for the user - they write it, keep it to one sentence

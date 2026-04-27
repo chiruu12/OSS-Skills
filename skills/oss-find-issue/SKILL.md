@@ -9,11 +9,11 @@ description: |
 
 # Find Issue
 
-Find a real, unclaimed issue that matches your skills — from repos that actually want your contribution. This skill does the research; you decide what's worth your time.
+Find a real, unclaimed issue that matches your skills - from repos that actually want your contribution. This skill does the research; you decide what's worth your time.
 
 ## Purpose
 
-Not every issue is worth picking up. Random issues filed by drive-by users often get closed without merging. Issues from maintainers and org members are the ones that get reviewed and merged. This skill finds those, checks if the repo accepts outside contributions, and matches issues to what you actually know — so you don't waste weeks on something that gets rejected or ignored.
+Not every issue is worth picking up. Random issues filed by drive-by users often get closed without merging. Issues from maintainers and org members are the ones that get reviewed and merged. This skill finds those, checks if the repo accepts outside contributions, and matches issues to what you actually know - so you don't waste weeks on something that gets rejected or ignored.
 
 ## Prerequisites
 
@@ -44,11 +44,11 @@ gh api repos/{owner}/{repo}/contents/CODE_OF_CONDUCT.md --jq '.content' | base64
 ```
 
 Check for:
-- **Explicit "we welcome contributions"** — if absent, that's a yellow flag
-- **CLA requirements** — some orgs require signing a Contributor License Agreement before any PR
-- **"Internal only" signals** — some repos state contributions are restricted to org members
-- **Stale contribution docs** — if CONTRIBUTING.md references tools/processes from 3+ years ago, the repo may not be actively maintained
-- **Recent external PRs merged** — strongest signal that outside contributions are welcome
+- **Explicit "we welcome contributions"** - if absent, that's a yellow flag
+- **CLA requirements** - some orgs require signing a Contributor License Agreement before any PR
+- **"Internal only" signals** - some repos state contributions are restricted to org members
+- **Stale contribution docs** - if CONTRIBUTING.md references tools/processes from 3+ years ago, the repo may not be actively maintained
+- **Recent external PRs merged** - strongest signal that outside contributions are welcome
 
 ```bash
 # Check if external PRs actually get merged
@@ -60,7 +60,7 @@ If the repo doesn't accept outside contributions, **tell the user immediately** 
 
 ### 3. Identify maintainers and core contributors
 
-Issues filed by maintainers carry more weight — they represent actual project priorities.
+Issues filed by maintainers carry more weight - they represent actual project priorities.
 
 ```bash
 # Get repo collaborators and recent committers
@@ -104,7 +104,7 @@ gh pr list -R {owner}/{repo} --search "#{number}" --state open --json number,tit
 - No assignee AND no "I'll take this" / "working on this" in recent comments
 - No open PR linked to this issue
 - Created or updated within last 6 months
-- Clearly scoped — you can describe what needs to change in 2 sentences
+- Clearly scoped - you can describe what needs to change in 2 sentences
 - Filed by maintainer/member/collaborator (or explicitly endorsed by one in comments)
 
 **Ranking criteria**:
@@ -123,21 +123,21 @@ gh pr list -R {owner}/{repo} --search "#{number}" --state open --json number,tit
 For each of the top 3 issues, present:
 
 ```
-### #{number} — {title}
+### #{number} - {title}
 - **Filed by**: {author} ({authorAssociation})
-- **Why this issue**: {one sentence — what makes it a good pick for THIS user}
+- **Why this issue**: {one sentence - what makes it a good pick for THIS user}
 - **What it involves**: {what needs to change, in plain language}
 - **Skills exercised**: {what the user will learn/practice}
-- **Complexity**: {low / medium / high — relative to user's stated experience}
+- **Complexity**: {low / medium / high - relative to user's stated experience}
 - **Maintainer activity**: {last maintainer comment date, engagement level}
 - **Link**: {url}
 ```
 
-### 7. Thinking gate — user decides
+### 7. Thinking gate - user decides
 
 **Do NOT let the user just say "number 1."** Ask:
 
-> "Before you pick one — tell me: why does this issue interest you? What do you think the fix might involve? This helps me make sure you're picking something you'll actually learn from, not just the easiest one."
+> "Before you pick one - tell me: why does this issue interest you? What do you think the fix might involve? This helps me make sure you're picking something you'll actually learn from, not just the easiest one."
 
 If the user can't articulate why, that's a signal to dig deeper or suggest a different issue.
 
@@ -149,16 +149,16 @@ Once the user has chosen AND explained their reasoning:
 gh issue comment {number} -R {owner}/{repo} --body "Hi, I'd like to work on this issue. I'll submit a PR within [user-specified timeframe]."
 ```
 
-**Keep the claim comment short.** One sentence is enough. Don't write a paragraph about your background, your approach, or how excited you are. Maintainers see dozens of these — concise signals competence.
+**Keep the claim comment short.** One sentence is enough. Don't write a paragraph about your background, your approach, or how excited you are. Maintainers see dozens of these - concise signals competence.
 
 ## Related Skills
 
-- **Next step**: → `oss-prep-to-contribute` — prepare to actually contribute (set up dev env, understand codebase, knowledge check)
-- **Alternative**: → `oss-find-real-issues` — if no existing issues match, find real code problems to file as new issues
+- **Next step**: → `oss-prep-to-contribute` - prepare to actually contribute (set up dev env, understand codebase, knowledge check)
+- **Alternative**: → `oss-find-real-issues` - if no existing issues match, find real code problems to file as new issues
 
 ## Anti-patterns
 
-- **DO NOT** pick issues just because they look easy — pick ones that match skills AND teach something
-- **DO NOT** skip the eligibility check — getting a PR rejected because the org doesn't accept outside contributions is demoralizing
-- **DO NOT** claim multiple issues at once — claim one, ship it, then claim the next
-- **DO NOT** present issues from random users as equal to maintainer-filed issues — they're not
+- **DO NOT** pick issues just because they look easy - pick ones that match skills AND teach something
+- **DO NOT** skip the eligibility check - getting a PR rejected because the org doesn't accept outside contributions is demoralizing
+- **DO NOT** claim multiple issues at once - claim one, ship it, then claim the next
+- **DO NOT** present issues from random users as equal to maintainer-filed issues - they're not

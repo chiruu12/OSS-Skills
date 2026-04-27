@@ -1,11 +1,11 @@
 # Contributing to OSS-Skills
 
-Thanks for wanting to contribute. This project is about helping people become better open source contributors — and we practice what we preach.
+Thanks for wanting to contribute. This project is about helping people become better open source contributors - and we practice what we preach.
 
 ## Before you start
 
-1. Read the [README](README.md) — understand the philosophy (LLM researches, user thinks and codes)
-2. Read existing skills in `skills/` — match the structure and tone
+1. Read the [README](README.md) - understand the philosophy (LLM researches, user thinks and codes)
+2. Read existing skills in `skills/` - match the structure and tone
 3. If your change is non-trivial, open an issue first to discuss the approach
 
 ## Setting up
@@ -24,7 +24,7 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
 1. Read the full skill before editing
 2. Preserve the section structure: Purpose → Prerequisites → Process → Thinking Gates → Related Skills → Anti-patterns
 3. Check that cross-references to other skills remain valid
-4. Verify thinking gates still exist — removing them violates the core principle
+4. Verify thinking gates still exist - removing them violates the core principle
 
 ### Adding a new skill
 
@@ -63,8 +63,8 @@ The best test is using the skills on a real contribution:
 1. One logical change per PR
 2. Link the issue if one exists
 3. Explain what changed and why in the PR description
-4. Keep the diff focused — no drive-by cleanups
+4. Keep the diff focused - no drive-by cleanups
 
 ## Code of Conduct
 
-Be respectful. Be constructive. Remember that this project exists to help new contributors — the tone of everything we write should reflect that.
+Be respectful. Be constructive. Remember that this project exists to help new contributors - the tone of everything we write should reflect that.

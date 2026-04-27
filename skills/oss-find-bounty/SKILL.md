@@ -9,11 +9,11 @@ description: |
 
 # Find Bounty
 
-Find issues with bounties attached — real money for real contributions. This skill searches across bounty platforms and repo labels, checks the bounty terms, and matches opportunities to your skills. You evaluate which ones are worth your time.
+Find issues with bounties attached - real money for real contributions. This skill searches across bounty platforms and repo labels, checks the bounty terms, and matches opportunities to your skills. You evaluate which ones are worth your time.
 
 ## Purpose
 
-Bounties exist because maintainers need specific work done badly enough to pay for it. That means the work is valued, the review will be prioritized, and there's a financial incentive to ship quality. But bounties also attract low-effort submissions — AI-generated slop, half-baked PRs, and people who claim issues and never deliver. This skill helps you find legitimate bounties and stand out by actually understanding the problem before you start.
+Bounties exist because maintainers need specific work done badly enough to pay for it. That means the work is valued, the review will be prioritized, and there's a financial incentive to ship quality. But bounties also attract low-effort submissions - AI-generated slop, half-baked PRs, and people who claim issues and never deliver. This skill helps you find legitimate bounties and stand out by actually understanding the problem before you start.
 
 ## Prerequisites
 
@@ -45,12 +45,12 @@ done
 **Bounty platform search:**
 
 Research these platforms for the user's skill match:
-- **Algora** (console.algora.io) — bounties on GitHub issues, typically $50-$500
-- **Gitcoin** — crypto/web3 bounties, larger rewards
-- **IssueHunt** — bounty funding for GitHub issues
-- **Open Collective** — funded projects that pay for contributions
-- **Polar.sh** — funding for maintainers, sometimes has bounties
-- **GitHub Sponsors** — some sponsors fund specific issues
+- **Algora** (console.algora.io) - bounties on GitHub issues, typically $50-$500
+- **Gitcoin** - crypto/web3 bounties, larger rewards
+- **IssueHunt** - bounty funding for GitHub issues
+- **Open Collective** - funded projects that pay for contributions
+- **Polar.sh** - funding for maintainers, sometimes has bounties
+- **GitHub Sponsors** - some sponsors fund specific issues
 
 ```bash
 # Check if a specific repo uses bounty platforms
@@ -94,20 +94,20 @@ gh pr list -R {owner}/{repo} --search "#{number}" --state open --json number,tit
 For each legitimate bounty, estimate:
 
 ```
-### Bounty: #{number} — {title}
+### Bounty: #{number} - {title}
 - **Repo**: {owner}/{repo} ({stars} stars, last push {date})
 - **Amount**: ${amount} (via {platform})
 - **Complexity**: {low / medium / high}
-- **Estimated effort**: {hours — based on issue scope and codebase size}
+- **Estimated effort**: {hours - based on issue scope and codebase size}
 - **Effective rate**: ~${amount/hours}/hr
 - **Skill match**: {which of your skills this exercises}
-- **Competition**: {how many people are likely to submit — based on bounty age and amount}
+- **Competition**: {how many people are likely to submit - based on bounty age and amount}
 - **Link**: {url}
 ```
 
 ### 5. Check contribution eligibility
 
-Same as `oss-find-issue` step 2 — verify the repo accepts outside contributions:
+Same as `oss-find-issue` step 2 - verify the repo accepts outside contributions:
 
 ```bash
 gh api repos/{owner}/{repo}/contents/CONTRIBUTING.md --jq '.content' | base64 -d 2>/dev/null
@@ -130,31 +130,31 @@ Top 3 bounties, ranked by (effective rate * skill match * legitimacy):
 ```
 ## Recommended Bounties
 
-### 1. #{number} — {title} — ${amount}
+### 1. #{number} - {title} - ${amount}
 - **Repo**: {owner}/{repo}
-- **Why this one**: {one sentence — why it's a good pick for THIS user}
+- **Why this one**: {one sentence - why it's a good pick for THIS user}
 - **Scope**: {what needs to change}
 - **Effective rate**: ~${rate}/hr
-- **Risk**: {low — clear terms, active repo / medium — some ambiguity / high — unclear terms}
+- **Risk**: {low - clear terms, active repo / medium - some ambiguity / high - unclear terms}
 - **Link**: {url}
 ```
 
-### 7. Thinking gate — user evaluates
+### 7. Thinking gate - user evaluates
 
-> "Before you commit to a bounty — is the effective rate worth your time? Do you have the skills to complete this in a reasonable timeframe? Bounties that go unclaimed for weeks usually have a reason — do you see why others haven't picked this up?"
+> "Before you commit to a bounty - is the effective rate worth your time? Do you have the skills to complete this in a reasonable timeframe? Bounties that go unclaimed for weeks usually have a reason - do you see why others haven't picked this up?"
 
 The user must articulate why they're picking this specific bounty and what potential blockers they see.
 
 ## Related Skills
 
-- **Next step**: → `oss-bounty-prep` — understand the bounty terms, scope, and requirements in detail
-- **Alternative**: → `oss-find-issue` — if no good bounties exist, find regular contribution opportunities
+- **Next step**: → `oss-bounty-prep` - understand the bounty terms, scope, and requirements in detail
+- **Alternative**: → `oss-find-issue` - if no good bounties exist, find regular contribution opportunities
 - **After bounty prep**: → `oss-contribute` → `oss-submit-pr` → `oss-post-pr` (same workflow)
 
 ## Anti-patterns
 
-- **DO NOT** claim bounties you can't complete — it blocks other contributors and damages your reputation
-- **DO NOT** chase high-dollar bounties that are way above your skill level — start small, build reputation
-- **DO NOT** ignore bounty terms — some require approval before starting, some have deadlines
-- **DO NOT** submit AI-generated code to bounty issues — maintainers paying for work expect quality, and they'll check
-- **DO NOT** work on bounties from inactive repos — if the last commit was months ago, your PR won't get reviewed
+- **DO NOT** claim bounties you can't complete - it blocks other contributors and damages your reputation
+- **DO NOT** chase high-dollar bounties that are way above your skill level - start small, build reputation
+- **DO NOT** ignore bounty terms - some require approval before starting, some have deadlines
+- **DO NOT** submit AI-generated code to bounty issues - maintainers paying for work expect quality, and they'll check
+- **DO NOT** work on bounties from inactive repos - if the last commit was months ago, your PR won't get reviewed

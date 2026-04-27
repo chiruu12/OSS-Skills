@@ -47,14 +47,19 @@ echo ""
 echo "Checking prerequisites..."
 
 if ! command -v gh &>/dev/null; then
-  echo "  WARNING: 'gh' CLI not found. Some skills require it."
+  echo "  ERROR: 'gh' CLI not found. All skills require it."
   echo "  Install: https://cli.github.com/"
+  echo ""
+  echo "  Skills will be installed, but they won't work without gh."
+  echo "  Install gh, run 'gh auth login', then try the skills."
+  GH_MISSING=true
 else
   echo "  gh CLI: found"
+  GH_MISSING=false
   if gh auth status &>/dev/null 2>&1; then
     echo "  gh auth: authenticated"
   else
-    echo "  WARNING: gh not authenticated. Run 'gh auth login' first."
+    echo "  WARNING: gh not authenticated. Run 'gh auth login' before using skills."
   fi
 fi
 
@@ -81,12 +86,22 @@ SKILLS=(
 
 echo "Installing 8 skills..."
 
+INSTALLED=0
 for skill in "${SKILLS[@]}"; do
   skill_target="$TARGET_DIR/$skill"
   mkdir -p "$skill_target"
-  cp "$SKILLS_DIR/$skill/SKILL.md" "$skill_target/SKILL.md"
-  echo "  $skill"
+  if cp "$SKILLS_DIR/$skill/SKILL.md" "$skill_target/SKILL.md" 2>/dev/null; then
+    echo "  $skill"
+    INSTALLED=$((INSTALLED + 1))
+  else
+    echo "  FAILED: $skill"
+  fi
 done
+
+if [ "$INSTALLED" -ne "${#SKILLS[@]}" ]; then
+  echo ""
+  echo "WARNING: Only $INSTALLED/${#SKILLS[@]} skills installed. Check file permissions."
+fi
 
 # Create config directory
 CONFIG_DIR="$HOME/.oss-skills"
@@ -107,7 +122,7 @@ CONF
 fi
 
 echo ""
-echo "Done. 8 skills installed."
+echo "Done. $INSTALLED skills installed."
 echo ""
 echo "Available skills:"
 echo "  /oss-find-issue          Find unclaimed issues matching your skills"

@@ -8,11 +8,11 @@ description: |
 
 # Prep to Contribute
 
-Get ready to contribute — not by writing code, but by understanding what you're walking into. This skill reads the rules, checks if you're eligible, figures out what you don't know yet, and fills those gaps.
+Get ready to contribute - not by writing code, but by understanding what you're walking into. This skill reads the rules, checks if you're eligible, figures out what you don't know yet, and fills those gaps.
 
 ## Purpose
 
-Most rejected PRs fail before the first line of code — wrong branch, wrong style, missing CLA, or solving a problem the maintainer didn't actually want solved. This skill front-loads that understanding so you don't waste effort. It also checks what YOU know, because contributing to a codebase you don't understand produces garbage contributions.
+Most rejected PRs fail before the first line of code - wrong branch, wrong style, missing CLA, or solving a problem the maintainer didn't actually want solved. This skill front-loads that understanding so you don't waste effort. It also checks what YOU know, because contributing to a codebase you don't understand produces garbage contributions.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Most rejected PRs fail before the first line of code — wrong branch, wrong sty
 
 ### 1. Read the rules
 
-Read every contribution-relevant doc in the repo. Not skim — read:
+Read every contribution-relevant doc in the repo. Not skim - read:
 
 ```bash
 # Core docs (check both root and .github/)
@@ -41,7 +41,7 @@ Extract and present to the user in structured form:
 ## Contribution Requirements for {repo}
 
 **Eligibility**: {open to all / CLA required / org members only / unclear}
-**CLA**: {none / required — link to sign}
+**CLA**: {none / required - link to sign}
 **Dev setup**: {step-by-step from their docs}
 **Branch convention**: {e.g., "feature/issue-123-description"}
 **Commit convention**: {e.g., "conventional commits", "no squash", "sign-off required"}
@@ -78,17 +78,17 @@ Use Explore agents to build a structural map:
 - Test location and framework
 - Build system and CI pipeline
 
-Present as a concise summary — not a file dump. The user needs a mental model, not a directory listing.
+Present as a concise summary - not a file dump. The user needs a mental model, not a directory listing.
 
 ```
 ## Codebase Map
 
 **Stack**: {language, framework, key deps}
-**Architecture**: {pattern in one sentence — e.g., "layered: routes → services → models"}
+**Architecture**: {pattern in one sentence - e.g., "layered: routes → services → models"}
 **Entry point**: {file path}
 **Where the issue lives**: {directory/module relevant to their issue}
 **Test framework**: {jest/pytest/cargo test/etc.}
-**CI**: {GitHub Actions / CircleCI / etc. — what runs on PR}
+**CI**: {GitHub Actions / CircleCI / etc. - what runs on PR}
 ```
 
 ### 4. Knowledge check
@@ -102,7 +102,7 @@ Questions to ask (adapt based on the issue):
 - "This repo uses {framework}. Are you comfortable with {specific concept the issue touches}?"
 - "The issue involves {area}. Can you explain how {relevant concept} works in this codebase?"
 - "The test suite uses {framework}. Have you written tests with it before?"
-- "The PR process requires {specific thing — e.g., signed commits, conventional commit messages}. Do you know how to set that up?"
+- "The PR process requires {specific thing - e.g., signed commits, conventional commit messages}. Do you know how to set that up?"
 
 **Do NOT dump all questions at once.** Ask one, process the answer, then ask the next. Each question builds on the previous.
 
@@ -132,19 +132,19 @@ Present:
 - What tests already exist for this code
 - What adjacent code might be affected
 
-### 6. Thinking gate — user explains the plan
+### 6. Thinking gate - user explains the plan
 
 Before moving to actual contribution, the user must articulate:
 
-> "Now that you've seen the codebase and the issue — explain to me in your own words:
+> "Now that you've seen the codebase and the issue - explain to me in your own words:
 > 1. What is the repo's architecture? (one sentence)
 > 2. What does the issue ask for?
 > 3. Where in the code does this need to change?
 > 4. What's your rough plan for the fix?"
 
-**If the user can't answer these**, they're not ready. Go back to step 4 and fill more gaps. Do NOT let them proceed to coding without this understanding — it's the whole point.
+**If the user can't answer these**, they're not ready. Go back to step 4 and fill more gaps. Do NOT let them proceed to coding without this understanding - it's the whole point.
 
-If the user's plan has gaps or misconceptions, point them out and ask them to revise. Don't correct it for them — tell them WHERE the gap is and let them figure it out.
+If the user's plan has gaps or misconceptions, point them out and ask them to revise. Don't correct it for them - tell them WHERE the gap is and let them figure it out.
 
 ### 7. Set up the environment
 
@@ -168,13 +168,13 @@ Verify existing tests pass before any changes. If they don't, note it but don't 
 
 ## Related Skills
 
-- **Previous step**: ← `oss-find-issue` — find the issue to work on
-- **Next step**: → `oss-contribute` — start the actual investigation and contribution work
+- **Previous step**: ← `oss-find-issue` - find the issue to work on
+- **Next step**: → `oss-contribute` - start the actual investigation and contribution work
 - **Alternative entry**: Can be invoked directly if user already has a repo + issue in mind
 
 ## Anti-patterns
 
-- **DO NOT** let the user skip the knowledge check — contributing without understanding produces garbage
-- **DO NOT** dump all information at once — drip-feed based on what the user already knows
-- **DO NOT** set up the dev environment before the user understands the codebase — setup is the easy part, understanding is the hard part
-- **DO NOT** hand-wave eligibility — if the repo doesn't merge external PRs, say so clearly
+- **DO NOT** let the user skip the knowledge check - contributing without understanding produces garbage
+- **DO NOT** dump all information at once - drip-feed based on what the user already knows
+- **DO NOT** set up the dev environment before the user understands the codebase - setup is the easy part, understanding is the hard part
+- **DO NOT** hand-wave eligibility - if the repo doesn't merge external PRs, say so clearly

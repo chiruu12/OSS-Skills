@@ -2,7 +2,7 @@
 
 ## Why these skills exist
 
-Open source has a contribution problem. Not a shortage of contributors — a shortage of contributors who understand what they're contributing to.
+Open source has a contribution problem. Not a shortage of contributors - a shortage of contributors who understand what they're contributing to.
 
 AI coding tools made this worse. Now someone can fork a repo, ask an LLM to fix an issue, submit the PR, and never understand a single line of what was generated. The maintainer reviews AI-generated code from someone who can't answer questions about it. The contributor lists an "open source contribution" on their resume but learned nothing.
 
@@ -21,15 +21,15 @@ You handle what builds real engineering judgment: diagnosing root causes, choosi
 
 ## Thinking gates
 
-The skills enforce this model through **thinking gates** — mandatory checkpoints where you must articulate your understanding before proceeding.
+The skills enforce this model through **thinking gates** - mandatory checkpoints where you must articulate your understanding before proceeding.
 
 A thinking gate looks like this:
 
-> "Based on what I've found — can you explain in your own words:
+> "Based on what I've found - can you explain in your own words:
 > 1. What's the root cause of this issue?
 > 2. Which approach do you want to take, and why?"
 
-The LLM won't continue until you answer. If your answer has gaps, it points to the specific code that fills them — it doesn't give you the answer.
+The LLM won't continue until you answer. If your answer has gaps, it points to the specific code that fills them - it doesn't give you the answer.
 
 This is uncomfortable. That's the point. The discomfort is the learning.
 
@@ -42,7 +42,7 @@ These skills optimize for contributions that:
 3. **Solve real problems.** The issue was filed by a maintainer, affects real users, and is clearly scoped.
 4. **Get merged.** A contribution that gets rejected taught something, but a contribution that gets merged taught something AND made the project better.
 
-One well-crafted PR beats five sloppy ones. Quality signals competence. Competence earns trust. Trust opens doors — to more interesting issues, to mentorship, to being invited as a maintainer.
+One well-crafted PR beats five sloppy ones. Quality signals competence. Competence earns trust. Trust opens doors - to more interesting issues, to mentorship, to being invited as a maintainer.
 
 ## For GSoC candidates specifically
 
@@ -54,4 +54,4 @@ When you use these skills, you'll be able to:
 - Answer reviewer questions without needing to "check and get back"
 - Contribute iteratively based on feedback
 
-That's what gets you selected. Not the number of PRs — the quality of understanding behind them.
+That's what gets you selected. Not the number of PRs - the quality of understanding behind them.

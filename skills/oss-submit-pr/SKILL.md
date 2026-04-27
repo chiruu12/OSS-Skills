@@ -3,16 +3,16 @@ name: oss-submit-pr
 description: |
   Submit a pull request following the repo's contribution guidelines. Reviews the diff,
   checks for common rejection reasons, and helps the user write their own PR description.
-  The LLM reviews — the user writes. Use when implementation is complete and tests pass.
+  The LLM reviews - the user writes. Use when implementation is complete and tests pass.
 ---
 
 # Submit PR
 
-Get your PR right the first time. This skill checks your work against the repo's rules, catches common rejection reasons, and helps you write a PR description that maintainers actually want to read. You write the description — the LLM reviews it.
+Get your PR right the first time. This skill checks your work against the repo's rules, catches common rejection reasons, and helps you write a PR description that maintainers actually want to read. You write the description - the LLM reviews it.
 
 ## Purpose
 
-A clean PR gets reviewed and merged. A sloppy PR gets ignored or closed. Most new contributors get rejected not because their code is bad, but because they didn't follow the process — wrong branch, missing tests, unclear description, scope creep. This skill catches all of that before you hit submit.
+A clean PR gets reviewed and merged. A sloppy PR gets ignored or closed. Most new contributors get rejected not because their code is bad, but because they didn't follow the process - wrong branch, missing tests, unclear description, scope creep. This skill catches all of that before you hit submit.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ A clean PR gets reviewed and merged. A sloppy PR gets ignored or closed. Most ne
 
 ### 1. Re-read contribution requirements
 
-Even if `oss-prep-to-contribute` already read these, read them again — specifically for PR submission rules:
+Even if `oss-prep-to-contribute` already read these, read them again - specifically for PR submission rules:
 
 ```bash
 # Fetch latest CONTRIBUTING.md
@@ -47,7 +47,7 @@ Extract PR-specific requirements:
 
 ### 2. Pre-flight checks
 
-Run every check the CI will run — locally, before pushing:
+Run every check the CI will run - locally, before pushing:
 
 ```bash
 # Rebase on latest upstream
@@ -87,7 +87,7 @@ Check for:
 
 For each issue found, present it to the user with the exact location:
 
-> "Found a potential issue at `src/foo.ts:42` — you left a `console.log` from debugging. Remove it before submitting."
+> "Found a potential issue at `src/foo.ts:42` - you left a `console.log` from debugging. Remove it before submitting."
 
 Don't auto-fix. Tell the user what and where.
 
@@ -105,7 +105,7 @@ If the repo uses conventional commits and the user's messages don't conform, exp
 git log upstream/main..HEAD --format='%B' | grep -c 'Signed-off-by'
 ```
 
-### 5. Thinking gate — user writes the PR description
+### 5. Thinking gate - user writes the PR description
 
 **The user writes the PR description, not the LLM.**
 
@@ -117,7 +117,7 @@ Tell the user:
 > 3. Why this approach (if non-obvious)
 > 4. How you tested it
 >
-> If the repo has a PR template, follow it. Write it in your own words — I'll review it after."
+> If the repo has a PR template, follow it. Write it in your own words - I'll review it after."
 
 Wait for the user to write it.
 
@@ -127,7 +127,7 @@ Once the user has written their description, review it for **conciseness and cla
 
 - Does it link the issue? ("Fixes #{number}")
 - Does it follow the repo's PR template (if one exists)?
-- Is it **short and direct**? Maintainers review dozens of PRs — they skim
+- Is it **short and direct**? Maintainers review dozens of PRs - they skim
 - Does it explain non-obvious decisions **without over-explaining obvious ones**?
 - Does it mention how the change was tested?
 
@@ -135,16 +135,16 @@ Once the user has written their description, review it for **conciseness and cla
 - Lead with what changed, not why you're writing
 - One sentence per point. No paragraphs where a bullet works
 - No filler: "This PR addresses the issue where..." → "Fixes null check in auth handler"
-- No AI jargon: "comprehensive", "robust", "leverages", "utilizing" — cut all of it
-- No self-narration: "I noticed that..." / "After investigating..." — just state the facts
+- No AI jargon: "comprehensive", "robust", "leverages", "utilizing" - cut all of it
+- No self-narration: "I noticed that..." / "After investigating..." - just state the facts
 - Technical terms are fine. Buzzwords are not
 - If the PR template asks for something, answer it. Don't add extra sections
 
 Give specific feedback:
 
-> "Your description is good, but trim the first paragraph — the reviewer doesn't need the backstory. Lead with what changed."
+> "Your description is good, but trim the first paragraph - the reviewer doesn't need the backstory. Lead with what changed."
 
-Don't rewrite it — give feedback and let the user revise.
+Don't rewrite it - give feedback and let the user revise.
 
 ### 7. Submit
 
@@ -174,30 +174,30 @@ gh pr checks {pr-number} -R {owner}/{repo} --watch
 If CI fails:
 - Explain WHAT failed (test name, lint rule, build error)
 - Point to the relevant code
-- Don't fix it — tell the user what needs to change
+- Don't fix it - tell the user what needs to change
 
 ## Common rejection reasons (educate the user)
 
 Present these before submission as a final checklist:
 
-1. **Scope creep** — PR touches files unrelated to the issue
-2. **No tests** — code changes without test changes in a repo that expects tests
-3. **CI failure** — tests or lint fail (never submit with red CI)
-4. **Poor description** — maintainer can't understand what the PR does from the description alone
-5. **Wrong base branch** — PR targets wrong branch (check repo conventions)
-6. **Style violations** — code doesn't match repo's formatting/naming conventions
-7. **Breaking changes without discussion** — changes public API without prior maintainer approval
+1. **Scope creep** - PR touches files unrelated to the issue
+2. **No tests** - code changes without test changes in a repo that expects tests
+3. **CI failure** - tests or lint fail (never submit with red CI)
+4. **Poor description** - maintainer can't understand what the PR does from the description alone
+5. **Wrong base branch** - PR targets wrong branch (check repo conventions)
+6. **Style violations** - code doesn't match repo's formatting/naming conventions
+7. **Breaking changes without discussion** - changes public API without prior maintainer approval
 
 ## Related Skills
 
-- **Previous step**: ← `oss-contribute` — the implementation work
-- **Next step**: → `oss-post-pr` — handle review feedback after submission
+- **Previous step**: ← `oss-contribute` - the implementation work
+- **Next step**: → `oss-post-pr` - handle review feedback after submission
 - **If CI fails**: Fix locally and push again (don't invoke another skill, just fix and push)
 
 ## Anti-patterns
 
-- **DO NOT** write the PR description for the user — review and give feedback on theirs
-- **DO NOT** auto-fix diff issues — tell the user what and where, they fix it
-- **DO NOT** submit with failing CI — ever
-- **DO NOT** skip the pre-flight checks — "it works on my machine" is not enough
+- **DO NOT** write the PR description for the user - review and give feedback on theirs
+- **DO NOT** auto-fix diff issues - tell the user what and where, they fix it
+- **DO NOT** submit with failing CI - ever
+- **DO NOT** skip the pre-flight checks - "it works on my machine" is not enough
 - **DO NOT** include "AI-generated" boilerplate in the PR unless the repo's CODE_OF_CONDUCT requires disclosure

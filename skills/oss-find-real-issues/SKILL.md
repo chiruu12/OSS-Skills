@@ -1,7 +1,7 @@
 ---
 name: oss-find-real-issues
 description: |
-  Find actual code issues in a repo that aren't listed in GitHub issues — missing tests,
+  Find actual code issues in a repo that aren't listed in GitHub issues - missing tests,
   inconsistent patterns, outdated dependencies, documentation gaps. Presents findings to
   the user for evaluation. Use when you want to make proactive contributions beyond
   existing issues, or when no good issues are available.
@@ -9,17 +9,17 @@ description: |
 
 # Find Real Issues
 
-Don't wait for someone to file an issue — find real problems in the code. This skill analyzes a codebase for actual issues that maintainers would appreciate being fixed: missing tests, inconsistent patterns, silent failures, documentation gaps. You evaluate whether they're worth filing — the LLM just finds them.
+Don't wait for someone to file an issue - find real problems in the code. This skill analyzes a codebase for actual issues that maintainers would appreciate being fixed: missing tests, inconsistent patterns, silent failures, documentation gaps. You evaluate whether they're worth filing - the LLM just finds them.
 
 ## Purpose
 
-The best contributions aren't always in the issue tracker. Experienced contributors earn maintainer trust by finding and fixing problems nobody asked about — but that everyone benefits from. This skill teaches you to read code critically, spot patterns that are off, and evaluate whether a fix would be welcome.
+The best contributions aren't always in the issue tracker. Experienced contributors earn maintainer trust by finding and fixing problems nobody asked about - but that everyone benefits from. This skill teaches you to read code critically, spot patterns that are off, and evaluate whether a fix would be welcome.
 
 ## Prerequisites
 
 - A repo cloned locally
 - Basic understanding of the codebase (from `oss-prep-to-contribute` or your own exploration)
-- Check that the repo accepts unsolicited PRs (some don't — verify in CONTRIBUTING.md)
+- Check that the repo accepts unsolicited PRs (some don't - verify in CONTRIBUTING.md)
 
 ## Process
 
@@ -38,15 +38,15 @@ gh pr list -R {owner}/{repo} --state merged --limit 20 \
 ```
 
 Look for:
-- "Please file an issue before submitting a PR" — if present, you should file an issue first, not just submit a fix
-- "We welcome contributions" — green light
-- No external PRs merged — yellow flag, ask in their communication channel first
+- "Please file an issue before submitting a PR" - if present, you should file an issue first, not just submit a fix
+- "We welcome contributions" - green light
+- No external PRs merged - yellow flag, ask in their communication channel first
 
 Inform the user about the repo's stance on unsolicited contributions.
 
 ### 2. Systematic code analysis
 
-Use Explore agents to analyze the codebase across multiple dimensions. For each dimension, look for concrete, specific problems — not vague "could be better" observations.
+Use Explore agents to analyze the codebase across multiple dimensions. For each dimension, look for concrete, specific problems - not vague "could be better" observations.
 
 **Dimension 1: Test coverage gaps**
 
@@ -74,24 +74,42 @@ grep -rn "catch\|except\|Error\|panic\|unwrap" src/ --include="*.{ts,py,go,rs}" 
 **Dimension 3: Inconsistent patterns**
 
 ```bash
-# Find naming inconsistencies
-# Find different approaches to the same problem in different modules
-# Find deprecated API usage
+# Compare naming conventions across modules
+grep -rn "function\|def \|fn \|func " src/ --include="*.{ts,py,go,rs}" | head -30
+# Look for: camelCase vs snake_case mixing, inconsistent prefixes, different error types for the same kind of failure
+
+# Find multiple approaches to the same problem
+# Example: some modules use callbacks, others use promises, others use async/await
+grep -rn "callback\|\.then(\|async " src/ --include="*.{ts,py,go,rs}" | head -20
+
+# Check for deprecated API usage
+grep -rn "deprecated\|@deprecated\|DEPRECATED" src/ --include="*.{ts,py,go,rs}"
 ```
 
 **Dimension 4: Documentation gaps**
 
 ```bash
-# Find public APIs without documentation
-# Find README sections that reference non-existent files or commands
-# Find outdated examples
+# Find README references to files that don't exist
+grep -oP '\[.*?\]\(((?!http).*?)\)' README.md 2>/dev/null | while read link; do
+  file=$(echo "$link" | grep -oP '\(.*?\)' | tr -d '()')
+  [ ! -f "$file" ] && echo "Broken link: $link -> $file"
+done
+
+# Check if setup/install commands in README actually work
+# Read the "Getting Started" section and verify each command
+
+# Find public functions/classes without docstrings (Python example)
+grep -rn "def \|class " src/ --include="*.py" -A1 | grep -B1 -v '"""' | grep "def \|class "
 ```
 
 **Dimension 5: Dependency issues**
 
 ```bash
-# Check for outdated or vulnerable dependencies
-# {language-specific: npm audit, pip audit, cargo audit, etc.}
+# Language-specific vulnerability checks
+npm audit 2>/dev/null          # Node.js
+pip audit 2>/dev/null          # Python (requires pip-audit)
+cargo audit 2>/dev/null        # Rust
+go list -m -json all 2>/dev/null | grep -i "deprecated"  # Go
 ```
 
 ### 3. Filter for actionable findings
@@ -115,29 +133,29 @@ For each finding, present:
 ## Finding #{n}: {one-line summary}
 
 **Category**: {test gap / error handling / inconsistency / docs / security / dependency}
-**Severity**: {high — could cause bugs or security issues / medium — code quality / low — cosmetic}
+**Severity**: {high - could cause bugs or security issues / medium - code quality / low - cosmetic}
 **Location**: `{file}:{line}` 
 **What's wrong**: {specific description with code reference}
 **Impact**: {what could go wrong because of this}
-**Suggested approach**: {high-level — not a code fix, just the direction}
-**Would a PR be welcome?**: {yes — clearly a bug / maybe — discuss first / probably not — too opinionated}
+**Suggested approach**: {high-level - not a code fix, just the direction}
+**Would a PR be welcome?**: {yes - clearly a bug / maybe - discuss first / probably not - too opinionated}
 ```
 
-### 5. Thinking gate — user evaluates each finding
+### 5. Thinking gate - user evaluates each finding
 
 For each finding, ask the user:
 
 > "Look at finding #{n}. Do you agree this is a real problem? If you were a maintainer, would you merge a PR fixing this? Why or why not?"
 
-**This is the most important part.** The skill isn't just about finding issues — it's about teaching the user to evaluate code critically. Their judgment matters more than the LLM's analysis.
+**This is the most important part.** The skill isn't just about finding issues - it's about teaching the user to evaluate code critically. Their judgment matters more than the LLM's analysis.
 
 If the user says "yes, fix it" without articulating WHY:
 
-> "Before we proceed — explain why this is a problem. What could go wrong if it stays as-is? A maintainer will ask this in the PR review."
+> "Before we proceed - explain why this is a problem. What could go wrong if it stays as-is? A maintainer will ask this in the PR review."
 
 If the user disagrees with a finding:
 
-> "Good — that's a valid call. Can you explain why you think it's not an issue? Understanding why something ISN'T a problem is just as valuable."
+> "Good - that's a valid call. Can you explain why you think it's not an issue? Understanding why something ISN'T a problem is just as valuable."
 
 ### 6. File issues or proceed to fix
 
@@ -148,10 +166,10 @@ For findings the user validates:
 Help the user write an issue description (they write it, LLM reviews).
 
 **Issue writing rules:**
-- Title: what's wrong, in under 10 words. Not "Issue with..." — state the problem directly
+- Title: what's wrong, in under 10 words. Not "Issue with..." - state the problem directly
 - Body: reproduction steps or code reference, expected vs actual behavior, that's it
-- No filler, no "I believe", no "it seems like" — state facts
-- No AI jargon: "comprehensive", "robust", "fundamental" — cut all of it
+- No filler, no "I believe", no "it seems like" - state facts
+- No AI jargon: "comprehensive", "robust", "fundamental" - cut all of it
 - If you can't describe the issue in 5 lines, you don't understand it well enough yet
 
 ```bash
@@ -167,7 +185,7 @@ Then → `oss-find-issue` (claim the issue they just filed) → `oss-contribute`
 
 **Option B: Fix directly** (for small, obvious fixes in repos that accept unsolicited PRs):
 
-→ `oss-contribute` directly — skip to the implementation phase
+→ `oss-contribute` directly - skip to the implementation phase
 
 ### 7. Track findings
 
@@ -185,16 +203,16 @@ Maintain a summary:
 
 ## Related Skills
 
-- **Next step (file issue)**: → `oss-find-issue` — to claim the issue you just filed
-- **Next step (direct fix)**: → `oss-contribute` — to implement the fix
-- **Previous step**: ← `oss-prep-to-contribute` — should understand the codebase first
-- **Alternative to**: ← `oss-find-issue` — when no existing issues match your skills, find your own
+- **Next step (file issue)**: → `oss-find-issue` - to claim the issue you just filed
+- **Next step (direct fix)**: → `oss-contribute` - to implement the fix
+- **Previous step**: ← `oss-prep-to-contribute` - should understand the codebase first
+- **Alternative to**: ← `oss-find-issue` - when no existing issues match your skills, find your own
 
 ## Anti-patterns
 
-- **DO NOT** file issues for style preferences — "I'd do it differently" is not an issue
+- **DO NOT** file issues for style preferences - "I'd do it differently" is not an issue
 - **DO NOT** file issues without checking if the repo wants unsolicited contributions
-- **DO NOT** present findings as definitive problems — always let the user evaluate and decide
+- **DO NOT** present findings as definitive problems - always let the user evaluate and decide
 - **DO NOT** submit fix PRs for issues you haven't filed first (unless the repo explicitly welcomes it)
-- **DO NOT** run security scanners and dump the output — analyze, filter, and present only actionable findings
-- **DO NOT** treat every finding as equally important — severity and maintainer-welcome-ness matter
+- **DO NOT** run security scanners and dump the output - analyze, filter, and present only actionable findings
+- **DO NOT** treat every finding as equally important - severity and maintainer-welcome-ness matter
