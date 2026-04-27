@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$SCRIPT_DIR/skills"
+LOCAL_MODE=false
+
+# Parse args
+for arg in "$@"; do
+  case "$arg" in
+    --local) LOCAL_MODE=true ;;
+    --help|-h)
+      echo "Usage: ./setup [--local]"
+      echo ""
+      echo "  --local    Install skills relative to current project (.claude/skills/)"
+      echo "             instead of global (~/.claude/skills/)"
+      echo ""
+      echo "OSS-Skills: Six Claude Code skills for open source contributors."
+      echo "https://github.com/chiruu12/OSS-Skills"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg"
+      echo "Run ./setup --help for usage."
+      exit 1
+      ;;
+  esac
+done
+
+echo "OSS-Skills Setup"
+echo "================"
+echo ""
+
+# Determine install target
+if [ "$LOCAL_MODE" = true ]; then
+  TARGET_DIR="$(pwd)/.claude/skills"
+  echo "Installing to project: $TARGET_DIR"
+else
+  TARGET_DIR="$HOME/.claude/skills"
+  echo "Installing globally: $TARGET_DIR"
+fi
+
+mkdir -p "$TARGET_DIR"
+
+# Check prerequisites
+echo ""
+echo "Checking prerequisites..."
+
+if ! command -v gh &>/dev/null; then
+  echo "  WARNING: 'gh' CLI not found. Some skills require it."
+  echo "  Install: https://cli.github.com/"
+else
+  echo "  gh CLI: found"
+  if gh auth status &>/dev/null 2>&1; then
+    echo "  gh auth: authenticated"
+  else
+    echo "  WARNING: gh not authenticated. Run 'gh auth login' first."
+  fi
+fi
+
+if ! command -v git &>/dev/null; then
+  echo "  ERROR: git not found. Cannot continue."
+  exit 1
+else
+  echo "  git: found"
+fi
+
+echo ""
+
+# Install skills
+SKILLS=(
+  oss-find-issue
+  oss-prep-to-contribute
+  oss-contribute
+  oss-submit-pr
+  oss-post-pr
+  oss-find-real-issues
+)
+
+echo "Installing 6 skills..."
+
+for skill in "${SKILLS[@]}"; do
+  skill_target="$TARGET_DIR/$skill"
+  mkdir -p "$skill_target"
+  cp "$SKILLS_DIR/$skill/SKILL.md" "$skill_target/SKILL.md"
+  echo "  $skill"
+done
+
+# Create config directory
+CONFIG_DIR="$HOME/.oss-skills"
+if [ ! -d "$CONFIG_DIR" ]; then
+  mkdir -p "$CONFIG_DIR"
+  cat > "$CONFIG_DIR/config.json" << 'CONF'
+{
+  "languages": [],
+  "experience": "beginner",
+  "interests": [],
+  "strict_gates": true
+}
+CONF
+  echo ""
+  echo "Created default config at $CONFIG_DIR/config.json"
+  echo "Edit it to set your languages, experience level, and interests."
+fi
+
+echo ""
+echo "Done. 6 skills installed."
+echo ""
+echo "Available skills:"
+echo "  /oss-find-issue          Find unclaimed issues matching your skills"
+echo "  /oss-prep-to-contribute  Prepare to contribute (docs, eligibility, knowledge check)"
+echo "  /oss-contribute          Research the issue, you write the code"
+echo "  /oss-submit-pr           Submit a PR following repo guidelines"
+echo "  /oss-post-pr             Handle PR review feedback"
+echo "  /oss-find-real-issues    Find real code issues not in the tracker"
+echo ""
+echo "Start with: /oss-find-issue"
