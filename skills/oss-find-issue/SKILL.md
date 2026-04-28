@@ -137,7 +137,10 @@ For each of the top 3 issues, present:
 
 **Do NOT let the user just say "number 1."** Ask:
 
-> "Before you pick one - tell me: why does this issue interest you? What do you think the fix might involve? This helps me make sure you're picking something you'll actually learn from, not just the easiest one."
+> "Before you pick one - tell me:
+> 1. Why does this issue interest you? (What about it matches your skills from step 1?)
+> 2. What do you think the fix might involve? (Look at the 'What it involves' section above - does that match what you'd expect?)
+> 3. Is the complexity right for you? (Not so easy you learn nothing, not so hard you get stuck for weeks)"
 
 If the user can't articulate why, that's a signal to dig deeper or suggest a different issue.
 

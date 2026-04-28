@@ -111,13 +111,14 @@ git log upstream/main..HEAD --format='%B' | grep -c 'Signed-off-by'
 
 Tell the user:
 
-> "Write your PR description. Include:
-> 1. What this PR does (one sentence)
-> 2. Link to the issue it fixes
-> 3. Why this approach (if non-obvious)
-> 4. How you tested it
+> "Write your PR description. Start with one sentence: what does this PR do?
 >
-> If the repo has a PR template, follow it. Write it in your own words - I'll review it after."
+> Then add:
+> 1. Link to the issue ('Fixes #number')
+> 2. Why this approach - remember the trade-offs from /oss-contribute? Mention the key one
+> 3. How you tested it - what did you run, what passed?
+>
+> Keep it short. If the repo has a PR template, follow it. Write in your own words - I'll review it after."
 
 Wait for the user to write it.
 

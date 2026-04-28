@@ -137,10 +137,10 @@ Present:
 Before moving to actual contribution, the user must articulate:
 
 > "Now that you've seen the codebase and the issue - explain to me in your own words:
-> 1. What is the repo's architecture? (one sentence)
-> 2. What does the issue ask for?
-> 3. Where in the code does this need to change?
-> 4. What's your rough plan for the fix?"
+> 1. What is the repo's architecture? (Look at the codebase map above - describe it in one sentence)
+> 2. What does the issue ask for? (Restate it, don't just copy the title)
+> 3. Where in the code does this need to change? (I showed you the relevant files - which ones and why?)
+> 4. What's your rough plan? (Not the full implementation - just the high-level approach)"
 
 **If the user can't answer these**, they're not ready. Go back to step 4 and fill more gaps. Do NOT let them proceed to coding without this understanding - it's the whole point.
 

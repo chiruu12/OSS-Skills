@@ -4,15 +4,13 @@
 
 ```
 OSS-Skills/
-├── skills/                        # All 8 skills
+├── skills/                        # All 6 skills
 │   ├── oss-find-issue/            # Find unclaimed issues matching user skills
 │   ├── oss-prep-to-contribute/    # Check eligibility, knowledge gaps, educate
-│   ├── oss-contribute/            # Deep research, user thinks and codes
+│   ├── oss-contribute/            # Deep research, user describes logic, skill helps implement
 │   ├── oss-submit-pr/             # Pre-flight checks, submit PR
 │   ├── oss-post-pr/               # Handle PR review feedback
-│   ├── oss-find-real-issues/      # Find code issues not in the tracker
-│   ├── oss-find-bounty/           # Find paid issues across platforms
-│   └── oss-bounty-prep/           # Bounty terms, payout history, scope assessment
+│   └── oss-find-real-issues/      # Find code issues not in the tracker
 ├── docs/                          # Documentation
 ├── setup                          # Install script (bash)
 ├── CLAUDE.md                      # This file
@@ -39,18 +37,17 @@ Sections within each SKILL.md:
 3. **Prerequisites** - what the user needs before invoking
 4. **Process** - numbered steps with clear phases
 5. **Thinking Gates** - points where user must articulate understanding
-6. **Related Skills** - how this connects to the other 7 skills
+6. **Related Skills** - how this connects to the other 5 skills
 7. **Anti-patterns** - what this skill explicitly does NOT do
 
 ## Core principle
 
-**The LLM researches, the user thinks and codes.** No skill writes code for the user. Every skill has thinking gates where the user must explain their understanding. This is non-negotiable - it's the entire value proposition.
+**The user drives, the LLM researches and assists.** The user must describe the logic before the skill helps implement it. Every skill has thinking gates where the user must explain their understanding. The skill acts as a pair programmer, not a ghostwriter.
 
 ## Skill interconnection
 
 Skills reference each other at handoff points:
 - `oss-find-issue` → `oss-prep-to-contribute`
-- `oss-find-bounty` → `oss-bounty-prep` → `oss-prep-to-contribute`
 - `oss-prep-to-contribute` → `oss-contribute`
 - `oss-contribute` → `oss-submit-pr`
 - `oss-submit-pr` → `oss-post-pr`

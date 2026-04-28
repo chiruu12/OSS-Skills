@@ -145,7 +145,10 @@ For each finding, present:
 
 For each finding, ask the user:
 
-> "Look at finding #{n}. Do you agree this is a real problem? If you were a maintainer, would you merge a PR fixing this? Why or why not?"
+> "Look at finding #{n}. I showed you the location and impact above.
+> 1. Do you agree this is a real problem? (Look at the code at the location I cited)
+> 2. If you were a maintainer, would you merge a PR fixing this?
+> 3. What could go wrong if this stays unfixed? (Check the 'Impact' section above)"
 
 **This is the most important part.** The skill isn't just about finding issues - it's about teaching the user to evaluate code critically. Their judgment matters more than the LLM's analysis.
 

@@ -13,11 +13,11 @@ This is bad for everyone. Maintainers waste time on PRs from people who can't it
 These skills invert the typical AI coding workflow:
 
 **Typical AI tool**: You describe the problem → AI writes the code → You submit it
-**OSS-Skills**: You pick the problem → AI researches everything about it → You explain the root cause → You plan the approach → You write the code → AI reviews your work
+**OSS-Skills**: You pick the problem → AI researches everything about it → You explain the root cause → You plan the approach → You describe the logic → AI helps you implement it → AI reviews your work
 
 The LLM handles what's genuinely tedious and doesn't build skills: reading 500 lines of CONTRIBUTING.md, tracing code paths through unfamiliar modules, finding examples of patterns in a codebase you just cloned, checking if an issue is actually claimed.
 
-You handle what builds real engineering judgment: diagnosing root causes, choosing between approaches with real trade-offs, writing code that fits the codebase's patterns, explaining your decisions to reviewers.
+You handle what builds real engineering judgment: diagnosing root causes, choosing between approaches with real trade-offs, describing the logic flow for your fix, and explaining your decisions to reviewers. The skill then helps you implement what you described - like pair programming with a senior dev who knows the codebase.
 
 ## Thinking gates
 

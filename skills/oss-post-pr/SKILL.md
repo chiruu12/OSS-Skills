@@ -98,7 +98,10 @@ Present findings for each blocking comment:
 
 Before the user starts fixing anything:
 
-> "For each blocking comment, tell me: what is the reviewer asking for, and why do you think they want it that way?"
+> "For each blocking comment, tell me:
+> 1. What is the reviewer asking for? (Look at the 'What they want' section I researched above)
+> 2. Why do they want it that way? (Check the codebase examples I found - what pattern are they pointing to?)
+> 3. Do you agree, or do you want to discuss it with them?"
 
 This catches misunderstandings BEFORE the user writes code that still doesn't address the comment. Common failure: user makes a surface-level change that doesn't actually address the deeper concern.
 

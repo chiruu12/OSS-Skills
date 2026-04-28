@@ -15,7 +15,7 @@ for arg in "$@"; do
       echo "  --local    Install skills relative to current project (.claude/skills/)"
       echo "             instead of global (~/.claude/skills/)"
       echo ""
-      echo "OSS-Skills: Eight Claude Code skills for open source contributors."
+      echo "OSS-Skills: Six Claude Code skills for open source contributors."
       echo "https://github.com/chiruu12/OSS-Skills"
       exit 0
       ;;
@@ -52,10 +52,8 @@ if ! command -v gh &>/dev/null; then
   echo ""
   echo "  Skills will be installed, but they won't work without gh."
   echo "  Install gh, run 'gh auth login', then try the skills."
-  GH_MISSING=true
 else
   echo "  gh CLI: found"
-  GH_MISSING=false
   if gh auth status &>/dev/null 2>&1; then
     echo "  gh auth: authenticated"
   else
@@ -80,11 +78,9 @@ SKILLS=(
   oss-submit-pr
   oss-post-pr
   oss-find-real-issues
-  oss-find-bounty
-  oss-bounty-prep
 )
 
-echo "Installing 8 skills..."
+echo "Installing 6 skills..."
 
 INSTALLED=0
 for skill in "${SKILLS[@]}"; do
@@ -103,35 +99,15 @@ if [ "$INSTALLED" -ne "${#SKILLS[@]}" ]; then
   echo "WARNING: Only $INSTALLED/${#SKILLS[@]} skills installed. Check file permissions."
 fi
 
-# Create config directory
-CONFIG_DIR="$HOME/.oss-skills"
-if [ ! -d "$CONFIG_DIR" ]; then
-  mkdir -p "$CONFIG_DIR"
-  cat > "$CONFIG_DIR/config.json" << 'CONF'
-{
-  "languages": [],
-  "experience": "beginner",
-  "interests": [],
-  "strict_gates": true,
-  "min_bounty": 0
-}
-CONF
-  echo ""
-  echo "Created default config at $CONFIG_DIR/config.json"
-  echo "Edit it to set your languages, experience level, and interests."
-fi
-
 echo ""
 echo "Done. $INSTALLED skills installed."
 echo ""
 echo "Available skills:"
 echo "  /oss-find-issue          Find unclaimed issues matching your skills"
 echo "  /oss-prep-to-contribute  Prepare to contribute (docs, eligibility, knowledge check)"
-echo "  /oss-contribute          Research the issue, you write the code"
+echo "  /oss-contribute          Research the issue, you describe the logic"
 echo "  /oss-submit-pr           Submit a PR following repo guidelines"
 echo "  /oss-post-pr             Handle PR review feedback"
 echo "  /oss-find-real-issues    Find real code issues not in the tracker"
-echo "  /oss-find-bounty         Find paid bounty issues across platforms"
-echo "  /oss-bounty-prep         Understand bounty terms and scope before committing"
 echo ""
-echo "Start with: /oss-find-issue or /oss-find-bounty"
+echo "Start with: /oss-find-issue"
