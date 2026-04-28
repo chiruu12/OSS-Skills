@@ -1,6 +1,14 @@
 # Philosophy
 
-## Why these skills exist
+## Why I built this
+
+I've been on both sides of the PR review. As a contributor, I made every mistake in the book - picking issues nobody maintained, submitting PRs that ignored conventions, not being able to explain my own code. As a GSoC mentor, I watched other contributors make the same mistakes, over and over.
+
+The patterns are predictable. Someone finds an issue, asks an AI to fix it, submits the PR, and can't answer a single question during review. Or they skip CONTRIBUTING.md and get rejected for process, not code quality. Or they pick an issue filed by a random user and it never gets reviewed.
+
+These skills exist to break that cycle. Not by writing better code for you, but by making sure you understand what you're doing before you submit.
+
+## The problem
 
 Open source has a contribution problem. Not a shortage of contributors - a shortage of contributors who understand what they're contributing to.
 

@@ -56,6 +56,17 @@ Skills reference each other at handoff points:
 
 When editing a skill, check that cross-references remain valid.
 
+## IDE compatibility
+
+Skills are Claude Code native (they use the Agent tool, Skill tool, and Explore agents). But since all skills are plain markdown, they're portable:
+
+- **Cursor**: Copy SKILL.md content into `.cursor/rules/*.mdc`
+- **VS Code Copilot**: Copy into `.github/copilot-instructions.md`
+- **Windsurf**: Copy into `.windsurfrules`
+- **Codex / Antigravity**: `AGENTS.md` in repo root provides basic discovery
+
+v2 will add a setup flag (`./setup --cursor`, `./setup --copilot`, etc.) that installs in the right format automatically. For now, Claude Code is the primary target.
+
 ## Conventions
 
 - Read existing skills before editing - match the structure and tone

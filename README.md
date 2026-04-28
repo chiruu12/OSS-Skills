@@ -1,42 +1,14 @@
 # OSS-Skills
 
-**You want to contribute to open source but don't know where to start.** Which repo? Which issue? What if you pick the wrong one and waste a week on a PR that gets ignored?
+**6 Claude Code skills that walk you through your first open source contribution.** Install in 30 seconds. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
 
-OSS-Skills walks you through it. Six Claude Code skills that handle the research - reading contribution docs, tracing code paths, checking if the repo even accepts outside contributions - so you can focus on understanding the code and writing a PR that actually gets merged.
+Built by a GSoC mentor who got tired of watching contributors make the same avoidable mistakes - picking issues nobody maintains, skipping CONTRIBUTING.md, submitting PRs that ignore the repo's conventions, and not being able to explain their own code during review.
 
-**The model: you think, the LLM researches.** You describe the logic. You explain the root cause. You write the PR description. The skill does the grunt work (searching issues, reading 500-line CONTRIBUTING.md files, finding code patterns) and asks you questions that force you to actually understand what you're doing.
+These skills encode what I wish every contributor knew before their first submission.
 
-**Who this is for:**
-- **First-time contributors** - make your first PR without getting rejected for process mistakes
-- **GSoC candidates** - demonstrate understanding, not just output
-- **Anyone who treats open source as learning** - not a checkbox on a resume
+> **This is NOT a curated list or a collection of resources.** These are executable Claude Code skills you install and run. They search GitHub issues, read contribution docs, trace code paths, check if repos accept outside contributions, and ask you questions at every step. If you want a markdown list, this isn't it.
 
-## Install - 30 seconds
-
-**Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/), [`gh` CLI](https://cli.github.com/) (authenticated)
-
-### One-line install
-
-Open Claude Code and paste:
-
-> Install OSS-Skills: run `git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills && cd ~/.claude/skills/oss-skills && ./setup`
-
-### Manual install
-
-```bash
-git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills
-cd ~/.claude/skills/oss-skills
-./setup
-```
-
-### Project-local install
-
-```bash
-git clone https://github.com/chiruu12/OSS-Skills.git .claude/skills/oss-skills
-cd .claude/skills/oss-skills && ./setup --local
-```
-
-## Quick start
+## See it work
 
 ```
 You:     /oss-find-issue
@@ -44,60 +16,82 @@ Skill:   What languages do you know? Any specific repos, or want me to find one?
 You:     I know Python. No specific repo - find me a good first issue anywhere.
 Skill:   [searches repos, checks eligibility, filters by maintainer-filed issues]
          Found 3 unclaimed issues matching your skills...
+
+         1. fastapi/fastapi #5621 - Fix type hint in dependency injection
+         2. pallets/click #2734 - CLI argument parsing edge case
+         3. encode/httpx #3102 - Connection timeout not respected
+
 You:     That second one looks interesting - the CLI argument parsing bug.
 Skill:   Why that one? What do you think the fix involves?
-You:     Because I've worked with argparse before, and from the description it sounds like...
-Skill:   Good thinking. Claimed. Run /oss-prep-to-contribute next.
+         (Hint: look at the scope above - what about it matches your skills?)
+You:     I've worked with Click before. The description mentions argument groups
+         which I dealt with in my last project...
+Skill:   Good. Claimed it. Run /oss-prep-to-contribute next.
+
+You:     /oss-prep-to-contribute
+Skill:   [reads CONTRIBUTING.md, CODE_OF_CONDUCT, maps architecture]
+         This repo uses pytest, conventional commits, and requires DCO sign-off.
+         Quick check: do you know what DCO sign-off means?
+You:     Not really...
+Skill:   It's a one-line attestation that you have the right to submit this code.
+         Add it with: git commit -s. Here's the full guide: ...
+         Now explain the repo's architecture in your own words.
 ```
 
-## The workflow
+## Install - 30 seconds
 
-```
-  oss-find-issue → oss-prep-to-contribute → oss-contribute → oss-submit-pr → oss-post-pr
-                                                                  ↑                |
-                                                                  +-- (rework) ----+
+**Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/), [`gh` CLI](https://cli.github.com/) (authenticated)
 
-  oss-find-real-issues → (file issue) → oss-contribute → ...
+```bash
+git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills
+cd ~/.claude/skills/oss-skills
+./setup
 ```
+
+Or paste this into Claude Code and it handles everything:
+
+> Install OSS-Skills: run `git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills && cd ~/.claude/skills/oss-skills && ./setup`
+
+For project-local install: `./setup --local`
 
 ## The six skills
 
-| Skill | Your role | What it does for you |
-|-------|-----------|---------------------|
-| `/oss-find-issue` | The scout | Finds unclaimed issues from maintainers, checks repo eligibility, matches to your skills |
-| `/oss-prep-to-contribute` | The tutor | Reads all docs, maps the codebase, runs a knowledge check on what you need to know |
-| `/oss-contribute` | The researcher | Traces code paths, finds patterns, presents context. You describe the logic, it helps you implement |
-| `/oss-submit-pr` | The reviewer | Reviews your diff, flags issues, checks conventions. You write the PR description |
-| `/oss-post-pr` | The translator | Decodes reviewer feedback, finds codebase examples of what they want. You address it |
-| `/oss-find-real-issues` | The auditor | Finds real code problems not in the issue tracker. You evaluate what's worth filing |
+| Skill | Role | What it does |
+|-------|------|-------------|
+| `/oss-find-issue` | Scout | Finds unclaimed issues from maintainers, checks if repo accepts outside contributions, matches to your skills |
+| `/oss-prep-to-contribute` | Tutor | Reads all docs, maps the codebase, checks your knowledge gaps, won't let you code until you can explain the architecture |
+| `/oss-contribute` | Pair programmer | Traces code paths, finds patterns. You describe the logic, it helps you implement. Won't write code until you explain what it should do |
+| `/oss-submit-pr` | Reviewer | Pre-flight checks (tests, lint, rebase). Reviews your diff. You write the PR description, it tells you what to cut |
+| `/oss-post-pr` | Translator | Decodes terse reviewer comments. Finds codebase examples of what they want. You explain the feedback before fixing |
+| `/oss-find-real-issues` | Auditor | Finds real code problems not in the tracker (missing tests, error handling gaps). You evaluate what's worth filing |
 
-### `/oss-find-issue` - Find the right issue
+```
+  oss-find-issue -> oss-prep-to-contribute -> oss-contribute -> oss-submit-pr -> oss-post-pr
+                                                                     ^                |
+                                                                     +-- (rework) ----+
 
-Not every issue is worth picking up. Issues from random users get ignored. Issues from maintainers get reviewed and merged. This skill finds the ones that matter, filters for unclaimed work, and matches to your actual skills. It asks you to explain WHY you want the issue before claiming it.
+  oss-find-real-issues -> (file issue) -> oss-contribute -> ...
+```
 
-### `/oss-prep-to-contribute` - Get ready before you code
+## From the mentor's side
 
-Reads CONTRIBUTING.md, CODE_OF_CONDUCT, checks CLA requirements, maps the architecture. Then runs a knowledge check: "Do you know X? Are you familiar with Y?" If you don't know something, it explains concisely and points you to where to learn more. You must explain the repo's architecture in your own words before proceeding.
+Having reviewed contributions from both sides, here's what actually gets PRs rejected:
 
-### `/oss-contribute` - Research deep, you drive the code
+1. **Picking orphaned issues.** Issues filed by random users often get closed without review. Issues from maintainers get prioritized. Every skill checks `authorAssociation` to filter for issues maintainers actually care about.
 
-The core skill. The LLM traces code paths, reads git history, finds patterns, identifies constraints. Presents everything with `file:line` references. You explain the root cause, describe the logic flow you want to implement, and the skill helps you write it. Think of it as pair programming: you drive the logic, the skill fills in what you've specified.
+2. **Skipping the docs.** CONTRIBUTING.md exists for a reason. Half of rejected PRs fail on process - wrong branch convention, missing sign-off, no linked issue. The prep skill reads every doc so you don't skip the one that matters.
 
-### `/oss-submit-pr` - Submit it right the first time
+3. **Not understanding the code.** "I used AI to fix it" is obvious in review. When a maintainer asks "why did you do it this way?" and you can't answer, the PR dies. Thinking gates force you to explain the root cause before you write a line of code.
 
-Runs pre-flight checks (tests, lint, rebase). Reviews your diff for scope creep, debug leftovers, missing tests. You write the PR description - concise, no jargon, facts only. The LLM reviews it and tells you what to cut.
+4. **AI-generated PR descriptions.** Maintainers can tell. "This comprehensive PR robustly addresses..." gets closed. "Fixes null check in auth handler. Added test for empty input case." gets merged.
 
-### `/oss-post-pr` - Handle review feedback
+5. **Ignoring review feedback.** A reviewer says "use X pattern" and the contributor makes a surface change without understanding why. The post-pr skill researches what the reviewer actually wants and makes you explain it before you start fixing.
 
-Your PR got reviewed. This skill decodes terse reviewer comments into actionable context. Fetches codebase examples of the patterns they're asking for. You explain what the reviewer wants before you start fixing - catches misunderstandings before they waste a review cycle.
-
-### `/oss-find-real-issues` - Find problems nobody filed
-
-Analyzes the codebase for missing error handling, untested code paths, inconsistent patterns, documentation gaps. Presents findings with severity. You evaluate whether each one is a real problem and whether a PR would be welcome.
+These aren't hypothetical. These are patterns I've seen repeatedly.
 
 ## Thinking gates
 
-Every skill has **thinking gates** - checkpoints where you must articulate your understanding before the skill continues. Each gate gives you a hint about where to look, not just a bare question.
+Every skill has **thinking gates** - checkpoints where you must explain your understanding before proceeding. Each gate hints at where to look, not just bare questions.
 
 | Gate | When | What you must explain |
 |------|------|----------------------|
@@ -108,49 +102,38 @@ Every skill has **thinking gates** - checkpoints where you must articulate your 
 | Post-implementation | After coding | What did you change and why? Any edge cases? |
 | Review response | After seeing feedback | What does the reviewer want? Look at the examples found above |
 
-If you can't explain it, you don't understand it yet. The skill points you to the specific code, not just "try harder."
+The model: **you drive the logic, the skill fills in what you've specified.** Like pair programming with a senior dev who knows the codebase. You can't just say "fix it" - you have to describe what the code should do first.
 
 ## Writing rules
 
-All skills that create external-facing content (PRs, issues, comments, review responses) enforce:
+All skills that create PRs, issues, or comments enforce:
 
-- **No AI jargon.** "Comprehensive", "robust", "leverages", "utilizing" - cut all of it
+- **No AI jargon.** "Comprehensive", "robust", "leverages" - cut all of it
 - **No filler.** "This PR addresses the issue where..." -> "Fixes null check in auth handler"
-- **No self-narration.** "I noticed that..." / "After investigating..." - state facts
-- **Short and direct.** One sentence per point. No paragraphs where a bullet works
+- **Short and direct.** One sentence per point. Bullets over paragraphs
 - **Technical terms are fine. Buzzwords are not.**
 
-## Project structure
+## IDE support
 
-```
-OSS-Skills/
-├── skills/                        # All 6 skills
-│   ├── oss-find-issue/            # Find unclaimed issues matching your skills
-│   ├── oss-prep-to-contribute/    # Check eligibility, knowledge gaps, educate
-│   ├── oss-contribute/            # Deep research - you describe logic, skill helps implement
-│   ├── oss-submit-pr/             # Pre-flight checks, submit PR
-│   ├── oss-post-pr/               # Handle PR review feedback
-│   └── oss-find-real-issues/      # Find code issues not in the tracker
-├── docs/
-│   └── PHILOSOPHY.md              # Why "you think, LLM researches"
-├── setup                          # Install script (global or --local)
-├── CLAUDE.md                      # Development guide
-├── CONTRIBUTING.md                # How to contribute
-├── LICENSE                        # MIT
-└── README.md                      # This file
-```
+| IDE | Status | Format |
+|-----|--------|--------|
+| **Claude Code** | Supported | `./setup` installs SKILL.md files |
+| Cursor | Planned (v2) | `.cursor/rules/*.mdc` |
+| VS Code Copilot | Planned (v2) | `.github/copilot-instructions.md` |
+| Windsurf | Planned (v2) | `.windsurfrules` |
+| Codex / Antigravity | Basic | Reads `AGENTS.md` in repo root |
+
+All skills are plain markdown. The v2 setup script will install them in the right format for your IDE. Skills work best with Claude Code (they use the Agent and Skill tools), but the core workflows are portable to any AI coding tool that reads markdown instructions.
 
 ## Philosophy
 
-Three rules every skill follows:
+1. **You drive, it researches.** The LLM reads docs, traces code, finds patterns. You describe the logic, explain your reasoning, make decisions. It never writes code without you specifying what it should do first.
 
-1. **You drive, it researches.** The LLM reads docs, traces code, finds patterns. You describe the logic, explain your reasoning, and make decisions. It never writes code without you specifying what the code should do first.
+2. **Gate on understanding.** Before you code, explain the root cause. Before you submit, explain your approach. Before you address feedback, explain what the reviewer wants.
 
-2. **Gate on understanding.** Before you code, explain the root cause. Before you submit, explain your approach. Before you address feedback, explain what the reviewer wants. Can't articulate it? The skill shows you where to look.
+3. **Eligibility first.** Every skill checks whether the repo accepts outside contributions, whether there's a CLA, and whether the issue is actually maintained. No wasted effort on PRs that never get reviewed.
 
-3. **Eligibility first.** Every skill checks whether the repo accepts outside contributions, whether there's a CLA, and whether the issue is actually maintained. No wasted effort on PRs that will never be reviewed.
-
-Read the full philosophy: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
+Read more: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 
 ## Requirements
 
@@ -168,17 +151,17 @@ Read the full philosophy: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 
 **"gh: not logged in"** - Run `gh auth login` and follow the prompts.
 
-**Skills not showing up in Claude Code** - Check that SKILL.md files are in `~/.claude/skills/oss-*/SKILL.md`. Run `ls ~/.claude/skills/oss-*` to verify.
+**Skills not showing up** - Check `ls ~/.claude/skills/oss-*`. Each should have a SKILL.md inside.
 
-**Token usage** - Skills that use Explore agents (oss-contribute, oss-find-real-issues) consume more tokens because they dispatch sub-agents to trace code. Budget accordingly on large codebases.
+**Token usage** - oss-contribute and oss-find-real-issues use Explore agents which consume more tokens on large codebases.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). This project dogfoods its own skills.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgments
 
-Inspired by [gstack](https://github.com/garrytan/gstack) by Garry Tan - a framework that turns Claude Code into a virtual engineering team. OSS-Skills borrows the idea of structured, role-based skills but applies it to the open source contribution workflow. Also draws from [mattpocock/skills](https://github.com/mattpocock/skills) for skill design patterns.
+Inspired by [gstack](https://github.com/garrytan/gstack) by Garry Tan and [mattpocock/skills](https://github.com/mattpocock/skills). OSS-Skills borrows the idea of structured, role-based skills and applies it to the open source contribution workflow.
 
 ## License
 
