@@ -148,8 +148,21 @@ If the user can't articulate why, that's a signal to dig deeper or suggest a dif
 
 Once the user has chosen AND explained their reasoning:
 
+**Check the repo's assignment workflow first.** Some repos require maintainer assignment rather than self-claiming. Look for:
+- "Please request to be assigned" in CONTRIBUTING.md or issue templates
+- Issues with an `assignees` field in their template YAML frontmatter
+- Repos where maintainers assign work (check recent closed issues for the pattern)
+
+If the repo uses **assignment-based workflow**:
+
 ```bash
-gh issue comment {number} -R {owner}/{repo} --body "Hi, I'd like to work on this issue. I'll submit a PR within [user-specified timeframe]."
+gh issue comment {number} -R {owner}/{repo} --body "I'd like to be assigned to this issue."
+```
+
+If the repo allows **self-claiming**:
+
+```bash
+gh issue comment {number} -R {owner}/{repo} --body "I'd like to work on this issue. I'll submit a PR within [user-specified timeframe]."
 ```
 
 **Keep the claim comment short.** One sentence is enough. Don't write a paragraph about your background, your approach, or how excited you are. Maintainers see dozens of these - concise signals competence.
@@ -157,6 +170,7 @@ gh issue comment {number} -R {owner}/{repo} --body "Hi, I'd like to work on this
 ## Related Skills
 
 - **Next step**: → `oss-prep-to-contribute` - prepare to actually contribute (set up dev env, understand codebase, knowledge check)
+- **Preparation**: → `oss-explore-repo` - explore the codebase broadly before committing to a specific issue
 - **Alternative**: → `oss-find-real-issues` - if no existing issues match, find real code problems to file as new issues
 
 ## Anti-patterns

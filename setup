@@ -15,7 +15,7 @@ for arg in "$@"; do
       echo "  --local    Install skills relative to current project (.claude/skills/)"
       echo "             instead of global (~/.claude/skills/)"
       echo ""
-      echo "OSS-Skills: Six Claude Code skills for open source contributors."
+      echo "OSS-Skills: Eight Claude Code skills for open source contributors."
       echo "https://github.com/chiruu12/OSS-Skills"
       exit 0
       ;;
@@ -78,9 +78,11 @@ SKILLS=(
   oss-submit-pr
   oss-post-pr
   oss-find-real-issues
+  oss-explore-repo
+  oss-learn-stack
 )
 
-echo "Installing 6 skills..."
+echo "Installing 8 skills..."
 
 INSTALLED=0
 for skill in "${SKILLS[@]}"; do
@@ -109,5 +111,7 @@ echo "  /oss-contribute          Research the issue, you describe the logic"
 echo "  /oss-submit-pr           Submit a PR following repo guidelines"
 echo "  /oss-post-pr             Handle PR review feedback"
 echo "  /oss-find-real-issues    Find real code issues not in the tracker"
+echo "  /oss-explore-repo       Guided codebase exploration (architecture, patterns)"
+echo "  /oss-learn-stack        Learn unfamiliar tech from the repo's own code"
 echo ""
-echo "Start with: /oss-find-issue"
+echo "Start with: /oss-find-issue or /oss-explore-repo"

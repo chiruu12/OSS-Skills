@@ -4,13 +4,15 @@
 
 ```
 OSS-Skills/
-├── skills/                        # All 6 skills
+├── skills/                        # All 8 skills
 │   ├── oss-find-issue/            # Find unclaimed issues matching user skills
 │   ├── oss-prep-to-contribute/    # Check eligibility, knowledge gaps, educate
 │   ├── oss-contribute/            # Deep research, user describes logic, skill helps implement
 │   ├── oss-submit-pr/             # Pre-flight checks, submit PR
 │   ├── oss-post-pr/               # Handle PR review feedback
-│   └── oss-find-real-issues/      # Find code issues not in the tracker
+│   ├── oss-find-real-issues/      # Find code issues not in the tracker
+│   ├── oss-explore-repo/          # Guided codebase exploration (architecture, patterns)
+│   └── oss-learn-stack/           # Learn unfamiliar tech from the repo's own code
 ├── docs/                          # Documentation
 ├── setup                          # Install script (bash)
 ├── CLAUDE.md                      # This file
@@ -37,7 +39,7 @@ Sections within each SKILL.md:
 3. **Prerequisites** - what the user needs before invoking
 4. **Process** - numbered steps with clear phases
 5. **Thinking Gates** - points where user must articulate understanding
-6. **Related Skills** - how this connects to the other 5 skills
+6. **Related Skills** - how this connects to the other skills
 7. **Anti-patterns** - what this skill explicitly does NOT do
 
 ## Core principle
@@ -47,12 +49,15 @@ Sections within each SKILL.md:
 ## Skill interconnection
 
 Skills reference each other at handoff points:
-- `oss-find-issue` → `oss-prep-to-contribute`
-- `oss-prep-to-contribute` → `oss-contribute`
-- `oss-contribute` → `oss-submit-pr`
-- `oss-submit-pr` → `oss-post-pr`
+
+**Contribution track:**
+- `oss-find-issue` → `oss-prep-to-contribute` → `oss-contribute` → `oss-submit-pr` → `oss-post-pr`
 - `oss-post-pr` → `oss-contribute` (rework) or `oss-submit-pr` (minor fixes)
 - `oss-find-real-issues` → `oss-find-issue` or `oss-contribute`
+
+**Learning track:**
+- `oss-explore-repo` → `oss-find-issue` or `oss-find-real-issues`
+- `oss-learn-stack` ← triggered from `oss-prep-to-contribute`, `oss-explore-repo`, or `oss-contribute`
 
 When editing a skill, check that cross-references remain valid.
 
