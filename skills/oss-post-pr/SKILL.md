@@ -72,7 +72,7 @@ For each blocking review comment, investigate what the reviewer actually wants:
 
 ```bash
 # Find examples of the pattern they're suggesting
-grep -rn "pattern_reviewer_mentioned" src/ --include="*.{ts,py,go,rs}"
+grep -rn "pattern_reviewer_mentioned" src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs"
 
 # Check if this is a documented convention
 grep -r "pattern_name" CONTRIBUTING.md CLAUDE.md .eslintrc* .prettierrc* pyproject.toml

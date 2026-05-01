@@ -117,7 +117,7 @@ Now connect the issue to the actual code:
 
 ```bash
 # Search for keywords from the issue
-grep -r "keyword_from_issue" src/ --include="*.{ts,py,go,rs}" -l
+grep -r "keyword_from_issue" src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" -l
 
 # Check git history for the relevant area
 git log --oneline -10 -- "path/to/relevant/files"

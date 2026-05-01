@@ -39,7 +39,7 @@ Use Agent with subagent_type=Explore to thoroughly investigate the issue. This i
 
 ```bash
 # Trace the code path
-grep -rn "function_name\|class_name\|relevant_symbol" src/ --include="*.{ts,py,go,rs}"
+grep -rn "function_name\|class_name\|relevant_symbol" src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs"
 
 # Git history for context
 git log --oneline -15 -- "path/to/relevant/files"

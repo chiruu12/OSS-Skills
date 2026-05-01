@@ -30,7 +30,7 @@ Inventory the technologies used:
 ```bash
 # Dependencies
 cat package.json 2>/dev/null | jq '.dependencies, .devDependencies' 2>/dev/null
-cat requirements.txt 2>/dev/null || cat pyproject.toml 2>/dev/null | head -40
+(cat requirements.txt 2>/dev/null || cat pyproject.toml 2>/dev/null) | head -40
 cat go.mod 2>/dev/null | head -20
 cat Cargo.toml 2>/dev/null | head -30
 
@@ -82,7 +82,8 @@ For each identified gap, find real examples in this repo. Do NOT teach from gene
 
 ```bash
 # Find usage of the technology in the codebase
-grep -rn "{framework_import_or_pattern}" src/ lib/ --include="*.{ts,py,go,rs}" | head -20
+grep -rn "{framework_import_or_pattern}" src/ lib/ \
+  --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | head -20
 
 # Find the simplest, clearest example
 # (pick files that are short, well-named, and demonstrate the concept cleanly)

@@ -37,8 +37,12 @@ for path in \
   ".github/pull_request_template.md" \
   "PULL_REQUEST_TEMPLATE.md" \
   "pull_request_template.md" \
+  "docs/PULL_REQUEST_TEMPLATE.md" \
   "docs/pull_request_template.md"; do
-  gh api "repos/{owner}/{repo}/contents/$path" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null && break
+  if content=$(gh api "repos/{owner}/{repo}/contents/$path" --jq '.content' 2>/dev/null); then
+    printf '%s' "$content" | base64 -d 2>/dev/null
+    break
+  fi
 done
 
 # Check for multiple PR templates (directory-based)

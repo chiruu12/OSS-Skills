@@ -65,7 +65,7 @@ done
 
 ```bash
 # Find try/catch or error handling patterns and look for inconsistencies
-grep -rn "catch\|except\|Error\|panic\|unwrap" src/ --include="*.{ts,py,go,rs}" | head -30
+grep -rn "catch\|except\|Error\|panic\|unwrap" src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | head -30
 
 # Find functions that call external services/APIs without error handling
 # {trace external calls}
@@ -75,15 +75,15 @@ grep -rn "catch\|except\|Error\|panic\|unwrap" src/ --include="*.{ts,py,go,rs}" 
 
 ```bash
 # Compare naming conventions across modules
-grep -rn "function\|def \|fn \|func " src/ --include="*.{ts,py,go,rs}" | head -30
+grep -rn "function\|def \|fn \|func " src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | head -30
 # Look for: camelCase vs snake_case mixing, inconsistent prefixes, different error types for the same kind of failure
 
 # Find multiple approaches to the same problem
 # Example: some modules use callbacks, others use promises, others use async/await
-grep -rn "callback\|\.then(\|async " src/ --include="*.{ts,py,go,rs}" | head -20
+grep -rn "callback\|\.then(\|async " src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | head -20
 
 # Check for deprecated API usage
-grep -rn "deprecated\|@deprecated\|DEPRECATED" src/ --include="*.{ts,py,go,rs}"
+grep -rn "deprecated\|@deprecated\|DEPRECATED" src/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs"
 ```
 
 **Dimension 4: Documentation gaps**
@@ -167,14 +167,14 @@ Before filing, check if the repo has issue templates:
 ```bash
 # Check for issue template directory (multiple templates)
 gh api "repos/{owner}/{repo}/contents/.github/ISSUE_TEMPLATE" \
-  --jq '.[] | .name' 2>/dev/null
+  --jq '[.[] | select(.name != "config.yml") | .name]' 2>/dev/null
 
 # Check for single-file issue template
 gh api "repos/{owner}/{repo}/contents/ISSUE_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null
 gh api "repos/{owner}/{repo}/contents/.github/ISSUE_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null
 ```
 
-**If a template directory exists**: fetch each template file. Parse the YAML frontmatter (`name`, `description`, `labels`). Present the available templates:
+**If a template directory exists**: fetch each template file (skip `config.yml` - it's not a template). Templates can be `.md` (with YAML frontmatter) or `.yml` (issue forms). For `.md` templates, parse the YAML frontmatter (`name`, `description`, `labels`). For `.yml` issue forms, parse the top-level `name`, `description`, and `labels` fields directly. Present the available templates:
 
 ```
 Available issue templates:
@@ -207,11 +207,12 @@ Help the user write an issue description (they write it, LLM reviews). If a temp
 ```bash
 gh issue create -R {owner}/{repo} \
   --title "{descriptive title}" \
-  --label "{labels from template frontmatter, if any}" \
+  --label "{label1}" --label "{label2}" \
   --body "$(cat <<'EOF'
 {user's issue description - following template structure if one was found in step 6}
 EOF
 )"
+# Omit --label flags entirely if no labels from template. Use one --label per label.
 ```
 
 Then → `oss-find-issue` (claim the issue they just filed) → `oss-contribute` → `oss-submit-pr`

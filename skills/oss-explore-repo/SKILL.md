@@ -71,7 +71,8 @@ cat Makefile 2>/dev/null | head -30
 cat Cargo.toml 2>/dev/null | head -30
 
 # Key abstractions
-grep -rn "class \|interface \|trait \|type \|struct " src/ lib/ --include="*.{ts,py,go,rs,java}" | head -40
+grep -rn "class \|interface \|trait \|type \|struct " src/ lib/ \
+  --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" --include="*.java" | head -40
 ```
 
 Present a structured architecture summary:
@@ -87,11 +88,11 @@ Every codebase has its own vocabulary. Find the terms that appear everywhere:
 
 ```bash
 # Domain-specific terms in variable/function/class names
-grep -rn "class \|def \|function \|fn \|func " src/ lib/ --include="*.{ts,py,go,rs}" | \
+grep -rn "class \|def \|function \|fn \|func " src/ lib/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | \
   grep -oP '(class|def|function|fn|func)\s+\w+' | sort | uniq -c | sort -rn | head -20
 
 # Comments that define domain concepts
-grep -rn "// \|# \|/// \|/\*\*" src/ lib/ --include="*.{ts,py,go,rs}" | grep -i "represents\|defines\|a .* is\|means" | head -15
+grep -rn "// \|# \|/// \|/\*\*" src/ lib/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | grep -i "represents\|defines\|a .* is\|means" | head -15
 
 # Glossary in docs (if it exists)
 find docs/ -name "*glossary*" -o -name "*terminology*" -o -name "*concepts*" 2>/dev/null
@@ -110,7 +111,7 @@ What patterns does this codebase follow? Investigate:
 
 ```bash
 # Error handling approach
-grep -rn "try\|catch\|except\|Error\|Result\|unwrap\|panic" src/ lib/ --include="*.{ts,py,go,rs}" | head -20
+grep -rn "try\|catch\|except\|Error\|Result\|unwrap\|panic" src/ lib/ --include="*.ts" --include="*.py" --include="*.go" --include="*.rs" | head -20
 
 # Testing patterns
 ls test/ tests/ __tests__/ spec/ 2>/dev/null
