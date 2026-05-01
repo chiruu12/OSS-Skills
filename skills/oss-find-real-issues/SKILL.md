@@ -160,13 +160,42 @@ If the user disagrees with a finding:
 
 > "Good - that's a valid call. Can you explain why you think it's not an issue? Understanding why something ISN'T a problem is just as valuable."
 
-### 6. File issues or proceed to fix
+### 6. Fetch issue templates
+
+Before filing, check if the repo has issue templates:
+
+```bash
+# Check for issue template directory (multiple templates)
+gh api "repos/{owner}/{repo}/contents/.github/ISSUE_TEMPLATE" \
+  --jq '.[] | .name' 2>/dev/null
+
+# Check for single-file issue template
+gh api "repos/{owner}/{repo}/contents/ISSUE_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null
+gh api "repos/{owner}/{repo}/contents/.github/ISSUE_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null
+```
+
+**If a template directory exists**: fetch each template file. Parse the YAML frontmatter (`name`, `description`, `labels`). Present the available templates:
+
+```
+Available issue templates:
+1. Bug Report - Report a bug (labels: bug)
+2. Feature Request - Suggest an enhancement (labels: enhancement)
+3. Documentation - Report a docs issue (labels: documentation)
+```
+
+Ask the user: "Which template matches the issue you're filing?" Fetch the selected template and enforce its structure.
+
+**If a single template exists**: use it as the required format.
+
+**If no templates exist**: use the freeform issue format below.
+
+### 7. File issues or proceed to fix
 
 For findings the user validates:
 
 **Option A: File an issue first** (recommended for medium+ changes or repos that require it):
 
-Help the user write an issue description (they write it, LLM reviews).
+Help the user write an issue description (they write it, LLM reviews). If a template was found in step 6, the description must follow that template's structure.
 
 **Issue writing rules:**
 - Title: what's wrong, in under 10 words. Not "Issue with..." - state the problem directly
@@ -178,8 +207,9 @@ Help the user write an issue description (they write it, LLM reviews).
 ```bash
 gh issue create -R {owner}/{repo} \
   --title "{descriptive title}" \
+  --label "{labels from template frontmatter, if any}" \
   --body "$(cat <<'EOF'
-{user's issue description}
+{user's issue description - following template structure if one was found in step 6}
 EOF
 )"
 ```
@@ -190,7 +220,7 @@ Then → `oss-find-issue` (claim the issue they just filed) → `oss-contribute`
 
 → `oss-contribute` directly - skip to the implementation phase
 
-### 7. Track findings
+### 8. Track findings
 
 Maintain a summary:
 
@@ -208,6 +238,7 @@ Maintain a summary:
 
 - **Next step (file issue)**: → `oss-find-issue` - to claim the issue you just filed
 - **Next step (direct fix)**: → `oss-contribute` - to implement the fix
+- **Preparation**: ← `oss-explore-repo` - build broad understanding before looking for issues
 - **Previous step**: ← `oss-prep-to-contribute` - should understand the codebase first
 - **Alternative to**: ← `oss-find-issue` - when no existing issues match your skills, find your own
 

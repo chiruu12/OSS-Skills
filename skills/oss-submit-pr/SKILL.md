@@ -31,13 +31,29 @@ Even if `oss-prep-to-contribute` already read these, read them again - specifica
 # Fetch latest CONTRIBUTING.md
 gh api repos/{owner}/{repo}/contents/CONTRIBUTING.md --jq '.content' | base64 -d 2>/dev/null
 
-# Check for PR template
-gh api repos/{owner}/{repo}/contents/.github/PULL_REQUEST_TEMPLATE.md --jq '.content' | base64 -d 2>/dev/null
-gh api repos/{owner}/{repo}/contents/.github/pull_request_template.md --jq '.content' | base64 -d 2>/dev/null
+# Check for PR template - all standard locations
+for path in \
+  ".github/PULL_REQUEST_TEMPLATE.md" \
+  ".github/pull_request_template.md" \
+  "PULL_REQUEST_TEMPLATE.md" \
+  "pull_request_template.md" \
+  "docs/pull_request_template.md"; do
+  gh api "repos/{owner}/{repo}/contents/$path" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null && break
+done
+
+# Check for multiple PR templates (directory-based)
+gh api "repos/{owner}/{repo}/contents/.github/PULL_REQUEST_TEMPLATE" \
+  --jq '.[] | .name' 2>/dev/null
 ```
 
+**If a single template is found**: use it. The PR description must follow its structure exactly.
+
+**If a template directory exists with multiple templates**: present each template name to the user and ask which one matches their contribution type (bug fix, feature, docs, etc.). Fetch the selected template and use it.
+
+**If no template is found**: no template required - follow the general PR description guidance below.
+
 Extract PR-specific requirements:
-- PR template (must follow if present)
+- PR template (must follow if present - check ALL locations above)
 - Branch naming convention
 - Commit message format (conventional commits? sign-off required? DCO?)
 - Squash policy (squash before merge? maintainer squashes?)
@@ -127,7 +143,7 @@ Wait for the user to write it.
 Once the user has written their description, review it for **conciseness and clarity**:
 
 - Does it link the issue? ("Fixes #{number}")
-- Does it follow the repo's PR template (if one exists)?
+- Does it follow the repo's PR template structure? (If a template was found in step 1, every section from the template must be addressed)
 - Is it **short and direct**? Maintainers review dozens of PRs - they skim
 - Does it explain non-obvious decisions **without over-explaining obvious ones**?
 - Does it mention how the change was tested?

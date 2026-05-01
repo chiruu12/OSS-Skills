@@ -176,6 +176,7 @@ If tests or lint fail, explain WHAT failed and WHERE - don't fix it. Point the u
 
 - **Previous step**: ← `oss-prep-to-contribute` - set up the environment and build understanding
 - **Next step**: → `oss-submit-pr` - submit the PR following repo guidelines
+- **If knowledge gaps surface**: → `oss-learn-stack` - learn unfamiliar tech from the repo's own code
 - **If significant rework needed**: ← `oss-post-pr` sends back here after reviewer feedback
 
 ## Anti-patterns

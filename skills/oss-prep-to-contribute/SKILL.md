@@ -170,6 +170,8 @@ Verify existing tests pass before any changes. If they don't, note it but don't 
 
 - **Previous step**: ← `oss-find-issue` - find the issue to work on
 - **Next step**: → `oss-contribute` - start the actual investigation and contribution work
+- **If knowledge gaps are deep**: → `oss-learn-stack` - when the repo uses tech the user doesn't know at all
+- **For broader understanding**: → `oss-explore-repo` - if the user wants more than issue-specific context
 - **Alternative entry**: Can be invoked directly if user already has a repo + issue in mind
 
 ## Anti-patterns
