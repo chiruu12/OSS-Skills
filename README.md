@@ -126,17 +126,22 @@ All skills that create PRs, issues, or comments enforce:
 - **Short and direct.** One sentence per point. Bullets over paragraphs
 - **Technical terms are fine. Buzzwords are not.**
 
-## IDE support
+## Platform support
 
-| IDE | Status | Format |
-|-----|--------|--------|
-| **Claude Code** | Supported | `./setup` installs SKILL.md files |
-| Cursor | Planned (v2) | `.cursor/rules/*.mdc` |
-| VS Code Copilot | Planned (v2) | `.github/copilot-instructions.md` |
-| Windsurf | Planned (v2) | `.windsurfrules` |
-| Codex / Antigravity | Basic | Reads `AGENTS.md` in repo root |
+| Platform | Status | Install |
+|----------|--------|---------|
+| **Claude Code** | Full | `./setup` — slash commands, auto-discovery, Explore agents |
+| **Cursor** | Supported | Copy to `.cursor/rules/*.mdc` |
+| **GitHub Copilot** | Supported | Copy to `.github/copilot-instructions.md` |
+| **Windsurf** | Supported | Copy to `.windsurfrules` or `.windsurf/rules/` |
+| **Gemini CLI** | Supported | Copy to `GEMINI.md` |
+| **Codex CLI** | Supported | Reads `AGENTS.md` (already included) |
+| **Kiro** | Supported | Copy to `.kiro/skills/` |
+| **Any AI tool** | Manual | Paste SKILL.md content as context |
 
-All skills are plain markdown. The v2 setup script will install them in the right format for your IDE. Skills work best with Claude Code (they use the Agent and Skill tools), but the core workflows are portable to any AI coding tool that reads markdown instructions.
+All skills are plain markdown — the thinking gates and workflows work everywhere. Claude Code adds convenience (auto-routing, parallel search) but the core process is portable.
+
+**Full setup instructions for each platform:** [docs/PLATFORMS.md](docs/PLATFORMS.md)
 
 ## Philosophy
 
