@@ -178,18 +178,18 @@ Verify existing tests pass before any changes. If they don't, note it but don't 
 
 | Shortcut | Why It Fails |
 |----------|-------------|
-| "I already know this framework, skip the knowledge check" | You know the framework — but not how THIS repo uses it. Every codebase has conventions that diverge from docs. The knowledge check catches those gaps. |
-| "Let me set up the environment first, I'll understand the code later" | Environment setup is mechanical comfort. Understanding the codebase is the hard part. Setting up first creates a false sense of progress — you've done the easy thing and deferred the important thing. |
+| "I already know this framework, skip the knowledge check" | You know the framework - but not how THIS repo uses it. Every codebase has conventions that diverge from docs. The knowledge check catches those gaps. |
+| "Let me set up the environment first, I'll understand the code later" | Environment setup is mechanical comfort. Understanding the codebase is the hard part. Setting up first creates a false sense of progress - you've done the easy thing and deferred the important thing. |
 | "I'll learn the codebase by reading the code while I implement" | You'll read the code through the lens of your existing assumptions. The knowledge check and code tracing in steps 4-5 build a mental model BEFORE those assumptions can lead you astray. |
 | "The issue description is clear enough, I don't need to trace the code" | Issue descriptions describe symptoms. The code path reveals root causes, constraints, and adjacent code that could break. Skipping code tracing leads to fixes that introduce new bugs. |
-| "I can skip the thinking gate, I've contributed to OSS before" | Experience with OTHER repos doesn't mean you understand THIS one. Each repo has unique patterns. If you can answer the thinking gate questions easily, it takes 30 seconds — not a reason to skip. |
+| "I can skip the thinking gate, I've contributed to OSS before" | Experience with OTHER repos doesn't mean you understand THIS one. Each repo has unique patterns. If you can answer the thinking gate questions easily, it takes 30 seconds - not a reason to skip. |
 
 ## Red Flags
 
-- User wants to jump to coding before explaining the codebase architecture — they're optimizing for speed over understanding
-- Knowledge check reveals 3+ major gaps — user may need `oss-learn-stack` before continuing
-- No external PRs merged in recent history but user wants to proceed anyway — high risk of wasted effort
-- User can't explain where in the code the issue lives after step 5 — code tracing wasn't thorough enough
+- User wants to jump to coding before explaining the codebase architecture - they're optimizing for speed over understanding
+- Knowledge check reveals 3+ major gaps - user may need `oss-learn-stack` before continuing
+- No external PRs merged in recent history but user wants to proceed anyway - high risk of wasted effort
+- User can't explain where in the code the issue lives after step 5 - code tracing wasn't thorough enough
 
 ## Verification Checklist
 
@@ -197,7 +197,7 @@ Verify existing tests pass before any changes. If they don't, note it but don't 
 - [ ] CLA signed (if required) or confirmed not needed
 - [ ] Recent external PRs exist (repo accepts outside contributions)
 - [ ] Codebase map created (stack, architecture, entry point, test framework, CI)
-- [ ] Knowledge check completed — all gaps identified and filled
+- [ ] Knowledge check completed - all gaps identified and filled
 - [ ] User can answer: what's the architecture, what's the issue, where's the code, what's the plan (step 6)
 - [ ] Dev environment set up, existing tests pass
 - [ ] Working branch created following repo's branch convention

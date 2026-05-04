@@ -43,6 +43,7 @@ Skill:   It's a one-line attestation that you have the right to submit this code
 **Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/), [`gh` CLI](https://cli.github.com/) (authenticated)
 
 ```bash
+mkdir -p ~/.claude/skills
 git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills
 cd ~/.claude/skills/oss-skills
 ./setup
@@ -130,16 +131,16 @@ All skills that create PRs, issues, or comments enforce:
 
 | Platform | Status | Install |
 |----------|--------|---------|
-| **Claude Code** | Full | `./setup` — slash commands, auto-discovery, Explore agents |
+| **Claude Code** | Full | `./setup` - slash commands, auto-discovery, Explore agents |
 | **Cursor** | Supported | Copy to `.cursor/rules/*.mdc` |
-| **GitHub Copilot** | Supported | Copy to `.github/copilot-instructions.md` |
+| **GitHub Copilot** (VS Code / JetBrains) | Supported | Copy to `.github/copilot-instructions.md` |
 | **Windsurf** | Supported | Copy to `.windsurfrules` or `.windsurf/rules/` |
 | **Gemini CLI** | Supported | Copy to `GEMINI.md` |
 | **Codex CLI** | Supported | Reads `AGENTS.md` (already included) |
 | **Kiro** | Supported | Copy to `.kiro/skills/` |
 | **Any AI tool** | Manual | Paste SKILL.md content as context |
 
-All skills are plain markdown — the thinking gates and workflows work everywhere. Claude Code adds convenience (auto-routing, parallel search) but the core process is portable.
+All skills are plain markdown - the thinking gates and workflows work everywhere. Claude Code adds convenience (auto-routing, parallel search) but the core process is portable.
 
 **Full setup instructions for each platform:** [docs/PLATFORMS.md](docs/PLATFORMS.md)
 

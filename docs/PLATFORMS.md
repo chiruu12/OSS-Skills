@@ -1,6 +1,6 @@
 # Platform Integration Guide
 
-Install OSS-Skills on any AI coding tool that reads markdown instructions. Skills are plain markdown — the content is portable, only the installation location changes.
+Install OSS-Skills on any AI coding tool that reads markdown instructions. Skills are plain markdown - the content is portable, only the installation location changes.
 
 ## Claude Code (Primary)
 
@@ -9,6 +9,7 @@ The native target. Full support for Agent tool, Explore agents, and slash comman
 **Global install (all projects):**
 
 ```bash
+mkdir -p ~/.claude/skills
 git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills
 cd ~/.claude/skills/oss-skills && ./setup
 ```
@@ -16,6 +17,7 @@ cd ~/.claude/skills/oss-skills && ./setup
 **Project-local install:**
 
 ```bash
+mkdir -p .claude/skills
 git clone https://github.com/chiruu12/OSS-Skills.git .claude/skills/oss-skills
 cd .claude/skills/oss-skills && ./setup --local
 ```
@@ -28,38 +30,47 @@ Skills auto-discovered via SKILL.md frontmatter. Invoke with `/oss-find-issue`, 
 
 Copy skills into Cursor's rules directory. Each skill becomes a rule file.
 
+**Prerequisites:** Clone OSS-Skills first, then run these commands from the OSS-Skills repo root.
+
 **Install:**
 
 ```bash
+# From the OSS-Skills repo root
+SKILLS_DIR="$(pwd)/skills"
+cd /path/to/your-project
 mkdir -p .cursor/rules
-for skill in skills/oss-*/SKILL.md; do
+for skill in "$SKILLS_DIR"/oss-*/SKILL.md; do
   name=$(basename $(dirname "$skill"))
   cp "$skill" ".cursor/rules/${name}.mdc"
 done
 ```
 
-**Or manually:** Copy the content of any `skills/*/SKILL.md` into `.cursor/rules/` as a `.mdc` file.
+**Or manually:** Copy the content of any `skills/*/SKILL.md` into your project's `.cursor/rules/` as a `.mdc` file.
 
 **Usage:** Skills load automatically based on context. Reference them in chat: "Follow the oss-contribute workflow" or "Use the oss-find-issue process to find me an issue."
 
-**Limitations:** No slash command routing. Agent/Explore tool references won't work — Cursor uses its own tools. The workflows and thinking gates still apply.
+**Limitations:** No slash command routing. Agent/Explore tool references won't work - Cursor uses its own tools. The workflows and thinking gates still apply.
 
 ---
 
 ## GitHub Copilot (VS Code / JetBrains)
 
-Add skills as custom instructions that Copilot reads for context.
+Add skills as custom instructions that GitHub Copilot reads for context.
+
+**Prerequisites:** Clone OSS-Skills first, then run from the OSS-Skills repo root.
 
 **Install:**
 
 ```bash
+# From the OSS-Skills repo root
+SKILLS_DIR="$(pwd)/skills"
+cd /path/to/your-project
 mkdir -p .github
-# Combine all skills into one instructions file
 echo "# OSS Contribution Skills" > .github/copilot-instructions.md
 echo "" >> .github/copilot-instructions.md
-for skill in skills/oss-*/SKILL.md; do
+for skill in "$SKILLS_DIR"/oss-*/SKILL.md; do
   name=$(basename $(dirname "$skill"))
-  echo "---" >> .github/copilot-instructions.md
+  echo "## ${name}" >> .github/copilot-instructions.md
   echo "" >> .github/copilot-instructions.md
   cat "$skill" >> .github/copilot-instructions.md
   echo "" >> .github/copilot-instructions.md
@@ -68,7 +79,7 @@ done
 
 **Usage:** Copilot reads `.github/copilot-instructions.md` as context. Ask: "Help me contribute to this repo following the OSS contribution workflow."
 
-**Limitations:** No progressive disclosure — all skills loaded at once. For large context models this is fine; for smaller contexts, copy only the skills you need.
+**Limitations:** No progressive disclosure - all skills loaded at once. For large context models this is fine; for smaller contexts, copy only the skills you need.
 
 ---
 
@@ -178,4 +189,4 @@ The skills are self-contained markdown. No dependencies beyond `gh` CLI for GitH
 | Skill auto-discovery via frontmatter | | ✓ |
 | Progressive disclosure (load on demand) | | ✓ |
 
-The core value — structured workflows with thinking gates — works on every platform. Claude Code adds convenience (auto-routing, parallel search) but the workflows are portable.
+The core value - structured workflows with thinking gates - works on every platform. Claude Code adds convenience (auto-routing, parallel search) but the workflows are portable.

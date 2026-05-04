@@ -134,7 +134,7 @@ Tell the user:
 > "Write your PR description. Start with one sentence: what does this PR do?
 >
 > Then add:
-> 1. Link to the issue ('Fixes #number')
+> 1. Link to the issue ('Fixes #{number}')
 > 2. Why this approach - remember the trade-offs from /oss-contribute? Mention the key one
 > 3. How you tested it - what did you run, what passed?
 >
@@ -219,18 +219,18 @@ Present these before submission as a final checklist:
 
 | Shortcut | Why It Fails |
 |----------|-------------|
-| "CI will catch any issues, I don't need to run checks locally" | CI failures are public. Every maintainer sees your red check. Running locally first is basic professionalism — and saves a round-trip of push-wait-fix-push. |
+| "CI will catch any issues, I don't need to run checks locally" | CI failures are public. Every maintainer sees your red check. Running locally first is basic professionalism - and saves a round-trip of push-wait-fix-push. |
 | "The code speaks for itself, I don't need a detailed description" | Maintainers review 10+ PRs a week. They skim descriptions first to decide priority. No description = no context = bottom of the queue. |
 | "Let me just submit and iterate based on feedback" | First impressions matter. A sloppy first submission signals carelessness. Maintainers are less likely to invest review time in a PR that wasn't polished before submission. |
-| "I'll write the description later, let me just get the PR up" | The description IS the PR for the reviewer. They read it before the code. A PR without a description is a PR without context — it gets deprioritized or closed. |
+| "I'll write the description later, let me just get the PR up" | The description IS the PR for the reviewer. They read it before the code. A PR without a description is a PR without context - it gets deprioritized or closed. |
 | "The diff is small, I don't need to review it" | Small diffs still contain debug leftovers, commented-out code, unrelated formatting changes. A 5-line diff with a console.log gets the same rejection as a 500-line mess. |
 
 ## Red Flags
 
-- Diff touches files unrelated to the issue — scope creep that will trigger reviewer questions
-- PR description is longer than 3 paragraphs — over-explaining signals uncertainty about the approach
-- User can't summarize what the PR does in one sentence — the change isn't focused enough
-- CI has been failing for multiple pushes — stop pushing and debug locally
+- Diff touches files unrelated to the issue - scope creep that will trigger reviewer questions
+- PR description is longer than 3 paragraphs - over-explaining signals uncertainty about the approach
+- User can't summarize what the PR does in one sentence - the change isn't focused enough
+- CI has been failing for multiple pushes - stop pushing and debug locally
 
 ## Verification Checklist
 
@@ -239,7 +239,7 @@ Present these before submission as a final checklist:
 - [ ] Diff only touches files relevant to the issue (no scope creep)
 - [ ] No debug leftovers (console.log, print, debugger, TODO)
 - [ ] Commit messages follow repo convention
-- [ ] PR description links the issue (Fixes #number)
+- [ ] PR description links the issue (Fixes #{number})
 - [ ] PR description follows repo template (if one exists)
 - [ ] PR description written by user, reviewed by LLM
 - [ ] CI passes after submission

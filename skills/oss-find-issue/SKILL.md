@@ -185,10 +185,10 @@ gh issue comment {number} -R {owner}/{repo} --body "I'd like to work on this iss
 
 ## Red Flags
 
-- All recent "good first issue" labels are 6+ months old — repo may not be maintaining these labels
-- Zero external PRs merged in recent history — repo may not actually accept outside contributions
-- User can't explain why they picked a specific issue — they're optimizing for "easy" instead of "learning value"
-- Issue has 5+ comments saying "I'll work on this" with no PRs — something about this issue makes people give up
+- All recent "good first issue" labels are 6+ months old - repo may not be maintaining these labels
+- Zero external PRs merged in recent history - repo may not actually accept outside contributions
+- User can't explain why they picked a specific issue - they're optimizing for "easy" instead of "learning value"
+- Issue has 5+ comments saying "I'll work on this" with no PRs - something about this issue makes people give up
 
 ## Verification Checklist
 
