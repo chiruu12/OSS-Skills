@@ -173,6 +173,33 @@ gh issue comment {number} -R {owner}/{repo} --body "I'd like to work on this iss
 - **Preparation**: → `oss-explore-repo` - explore the codebase broadly before committing to a specific issue
 - **Alternative**: → `oss-find-real-issues` - if no existing issues match, find real code problems to file as new issues
 
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "I'll just pick the first 'good first issue' I see" | Most "good first issue" labels are stale. The issue may be claimed, have a linked PR, or be filed by a random user whose request will never be reviewed. |
+| "I don't need to check eligibility, it's open source" | Many repos don't merge external PRs, require CLAs, or only accept assigned work. Skipping this check wastes weeks on a PR that gets closed without review. |
+| "I'll claim 3 issues so I have options" | Maintainers notice. Claiming multiple issues signals you won't finish any of them. Claim one, ship it, earn trust, then claim the next. |
+| "Any issue will do, I just want a contribution" | Issues from random users often get closed. Maintainer-filed issues represent actual project priorities and get reviewed. The source matters. |
+| "I'll figure out if I can do it after I claim it" | Abandoning claimed issues hurts your reputation and blocks others. Evaluate complexity and skill match BEFORE claiming. |
+
+## Red Flags
+
+- All recent "good first issue" labels are 6+ months old — repo may not be maintaining these labels
+- Zero external PRs merged in recent history — repo may not actually accept outside contributions
+- User can't explain why they picked a specific issue — they're optimizing for "easy" instead of "learning value"
+- Issue has 5+ comments saying "I'll work on this" with no PRs — something about this issue makes people give up
+
+## Verification Checklist
+
+- [ ] Repo accepts external contributions (verified by checking recent merged external PRs)
+- [ ] Issue is unassigned and has no open linked PR
+- [ ] Issue was created or updated within the last 6 months
+- [ ] Issue was filed or endorsed by a maintainer/member/collaborator
+- [ ] User explained why this issue matches their skills and what they'll learn
+- [ ] Issue is clearly scoped (can describe the expected change in 2 sentences)
+- [ ] Claim comment posted (following repo's assignment workflow)
+
 ## Anti-patterns
 
 - **DO NOT** pick issues just because they look easy - pick ones that match skills AND teach something

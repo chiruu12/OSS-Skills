@@ -179,6 +179,33 @@ If tests or lint fail, explain WHAT failed and WHERE - don't fix it. Point the u
 - **If knowledge gaps surface**: → `oss-learn-stack` - learn unfamiliar tech from the repo's own code
 - **If significant rework needed**: ← `oss-post-pr` sends back here after reviewer feedback
 
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "Just show me the fix, I'll understand it later" | You won't. Reading someone else's fix teaches you what the answer is, not why. When the next bug is similar-but-different, you'll be stuck again. |
+| "I understand the issue, let's skip the thinking gates" | If you understand it, articulating it takes 30 seconds. If you can't articulate it, you don't understand it — and your implementation will show it. |
+| "The LLM already found the root cause, why do I need to explain it?" | Because a reviewer will ask you. Because your commit message needs to explain it. Because understanding is the whole point of contributing — not the PR. |
+| "Let's just write the code, I'll explain it after" | Code written without a plan drifts. You'll solve the wrong problem or miss edge cases the constraints would have caught. Plan first, code second. |
+| "This is a simple fix, we don't need all these steps" | Simple fixes in unfamiliar codebases are rarely simple. The fix is easy — knowing WHAT to fix and WHERE is the hard part. |
+
+## Red Flags
+
+- User says "just fix it" repeatedly without describing the logic — they're treating this as a code generator, not a learning tool
+- Implementation touches files not identified in the research — scope is creeping
+- User can't explain their changes in step 6 after writing them — they copied patterns without understanding
+- Tests pass but user can't explain what behavior they verify — mechanical testing, not intentional testing
+
+## Verification Checklist
+
+- [ ] User articulated the root cause in their own words (step 3)
+- [ ] User described their implementation plan before coding (step 4)
+- [ ] All code changes were described by the user before the LLM wrote them (step 5)
+- [ ] User can explain each changed file and why (step 6)
+- [ ] Tests pass, including new tests for the fix
+- [ ] Lint/formatting passes
+- [ ] Diff only touches files relevant to the issue
+
 ## Anti-patterns
 
 - **DO NOT** write code without the user describing the logic first - they must explain WHAT before you write HOW

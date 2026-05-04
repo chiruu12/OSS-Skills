@@ -243,6 +243,33 @@ Maintain a summary:
 - **Previous step**: ← `oss-prep-to-contribute` - should understand the codebase first
 - **Alternative to**: ← `oss-find-issue` - when no existing issues match your skills, find your own
 
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "I found a code smell, let me just fix it and submit a PR" | Uninvited PRs for subjective improvements get rejected. File an issue first — let the maintainer confirm it's wanted before you invest time in a fix. |
+| "The security scanner found 50 issues, let me file them all" | Scanner output without analysis is noise. Most findings are false positives or low-severity. Filing 50 issues burns maintainer goodwill. Filter ruthlessly, present only actionable findings. |
+| "This is obviously a bug, I don't need the user to evaluate it" | What looks like a bug might be intentional behavior, a known trade-off, or a design decision with context you don't have. The user's evaluation catches these before you embarrass yourself in an issue. |
+| "Any test coverage improvement is welcome" | Testing trivial getters or obvious constructors wastes reviewer time. Focus on critical untested code paths — error handling, edge cases, security-relevant logic. |
+| "I'll file the issue and fix it in the same PR" | Separate concerns. The issue gets maintainer buy-in. The PR delivers the fix. Combining them skips the "is this actually wanted?" check. |
+
+## Red Flags
+
+- All findings are severity "low" — you're finding cosmetic issues, not real problems
+- Findings cluster in one file — you may be looking too narrowly; expand to other modules
+- User agrees with every finding without pushback — they're not evaluating critically
+- Repo's CONTRIBUTING.md says "file an issue before submitting PRs" but user wants to skip straight to fixing
+
+## Verification Checklist
+
+- [ ] Repo accepts unsolicited contributions (verified)
+- [ ] Each finding has a specific file:line reference
+- [ ] Each finding has a clear impact statement (what could go wrong)
+- [ ] User evaluated each finding and gave a reasoned verdict
+- [ ] High-severity findings were filed as issues (if repo requires it)
+- [ ] Issue descriptions follow repo template (if one exists)
+- [ ] Findings summary table maintained with user verdicts and actions
+
 ## Anti-patterns
 
 - **DO NOT** file issues for style preferences - "I'd do it differently" is not an issue
