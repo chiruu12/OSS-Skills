@@ -1,7 +1,7 @@
 ---
 name: oss-post-pr
 description: |
-  Handle PR review feedback - understand reviewer comments, research their concerns,
+  Handle PR review feedback. understand reviewer comments, research their concerns,
   and help the user address them. The LLM explains what reviewers want and why; the user
   decides how to respond and writes the code. Use when you receive review comments on
   a submitted PR.
@@ -9,11 +9,11 @@ description: |
 
 # Post-PR Review
 
-Your PR got reviewed. Now what? This skill helps you understand what reviewers are actually asking for, why they're asking for it, and how to address their feedback - without writing the code for you.
+Your PR got reviewed. Now what? This skill helps you understand what reviewers are actually asking for, why they're asking for it, and how to address their feedback. without writing the code for you.
 
 ## Purpose
 
-Review comments from maintainers are often terse. "Can you use X pattern instead?" doesn't explain WHY X is preferred, or WHERE to find examples of it. This skill bridges that gap: it researches the reviewer's concern, finds examples in the codebase, and explains the reasoning - so you can address feedback intelligently instead of blindly copy-pasting.
+Review comments from maintainers are often terse. "Can you use X pattern instead?" doesn't explain WHY X is preferred, or WHERE to find examples of it. This skill bridges that gap: it researches the reviewer's concern, finds examples in the codebase, and explains the reasoning. so you can address feedback intelligently instead of blindly copy-pasting.
 
 ## Prerequisites
 
@@ -42,9 +42,9 @@ Sort each piece of feedback into categories:
 | Category | What it means | How to handle |
 |----------|--------------|---------------|
 | **Blocking** | "This must change before merge" | Address immediately |
-| **Suggestion** | "Consider doing X" / "nit:" | Evaluate - adopt if it improves the code |
+| **Suggestion** | "Consider doing X" / "nit:" | Evaluate. adopt if it improves the code |
 | **Question** | "Why did you do X?" | Explain your reasoning (this tests YOUR understanding) |
-| **Style** | "We prefer X convention" | Follow it - this is the repo's house rules |
+| **Style** | "We prefer X convention" | Follow it. this is the repo's house rules |
 | **Scope** | "This should be a separate PR" | Split if reviewer insists |
 
 Present the categorized list:
@@ -55,11 +55,11 @@ Present the categorized list:
 **Overall decision**: {approved / changes requested / commented}
 
 ### Blocking
-1. `src/foo.ts:42` - {reviewer}: "{comment}" → **Must fix**
+1. `src/foo.ts:42`: {reviewer}: "{comment}" → **Must fix**
 2. ...
 
 ### Suggestions
-1. `src/bar.ts:15` - {reviewer}: "{comment}" → **Evaluate**
+1. `src/bar.ts:15`: {reviewer}: "{comment}" → **Evaluate**
 2. ...
 
 ### Questions (you need to answer these)
@@ -87,33 +87,33 @@ Present findings for each blocking comment:
 ### Comment: "{reviewer's comment}" at {file}:{line}
 
 **What they want**: {plain language explanation}
-**Why**: {the reasoning - found from codebase patterns, docs, or common practice}
+**Why**: {the reasoning. found from codebase patterns, docs, or common practice}
 **Examples in codebase**: 
-- `src/similar.ts:30` - does it this way
-- `src/other.ts:55` - another example
+- `src/similar.ts:30`: does it this way
+- `src/other.ts:55`: another example
 **What you need to change**: {describe the change needed, don't write the code}
 ```
 
-### 4. Thinking gate - user explains each comment
+### 4. Thinking gate: user explains each comment
 
 Before the user starts fixing anything:
 
 > "For each blocking comment, tell me:
 > 1. What is the reviewer asking for? (Look at the 'What they want' section I researched above)
-> 2. Why do they want it that way? (Check the codebase examples I found - what pattern are they pointing to?)
+> 2. Why do they want it that way? (Check the codebase examples I found. what pattern are they pointing to?)
 > 3. Do you agree, or do you want to discuss it with them?"
 
 This catches misunderstandings BEFORE the user writes code that still doesn't address the comment. Common failure: user makes a surface-level change that doesn't actually address the deeper concern.
 
 If the user misunderstands a comment:
-- Point to the specific example in the codebase: "Look at `src/similar.ts:30` - see how they handle the same case? The reviewer wants you to follow that pattern because {reason}."
-- Don't write the fix - show the pattern and let them figure it out.
+- Point to the specific example in the codebase: "Look at `src/similar.ts:30`: see how they handle the same case? The reviewer wants you to follow that pattern because {reason}."
+- Don't write the fix. show the pattern and let them figure it out.
 
 ### 5. Handle questions from reviewers
 
 For review comments that are questions ("Why did you do X?"), the user MUST answer these themselves. But help them formulate a clear response:
 
-> "The reviewer asked why you chose X. Think back to when we investigated the issue - what was your reasoning? Write a clear response explaining your decision."
+> "The reviewer asked why you chose X. Think back to when we investigated the issue. what was your reasoning? Write a clear response explaining your decision."
 
 If the user struggles to explain their own code, that's a signal. Point them back to the relevant investigation from `oss-contribute` and ask what they remember.
 
@@ -133,10 +133,10 @@ The user fixes each blocking comment and responds to questions. During this phas
 - Dismiss suggestions without the user evaluating them
 
 **Review response writing rules** (enforce when reviewing user's draft responses):
-- Answer the question directly. "I chose X because Y" - done
+- Answer the question directly. "I chose X because Y". Done
 - No apologizing: "Sorry for the confusion" is noise. Just explain or fix
-- No filler: "Great catch!" / "Thanks for pointing that out!" - one line max, then substance
-- No AI jargon: "comprehensive", "robust", "leverages" - cut all of it
+- No filler: "Great catch!" / "Thanks for pointing that out!". One line max, then substance
+- No AI jargon: "comprehensive", "robust", "leverages". Cut all of it
 - If the response is longer than the reviewer's comment, it's probably too long
 - Match the reviewer's tone: if they wrote two words, you don't need two paragraphs
 
@@ -174,7 +174,7 @@ gh pr edit {pr-number} -R {owner}/{repo} --add-reviewer {reviewer}
 
 If the reviewer requests a fundamentally different approach:
 
-1. Don't panic - this is normal and educational
+1. Don't panic. this is normal and educational
 2. Research the suggested approach (same as step 3 but deeper)
 3. Present the alternative approach with its trade-offs
 4. Let the user decide whether to rework or discuss further with the reviewer
@@ -182,15 +182,15 @@ If the reviewer requests a fundamentally different approach:
 
 ## Related Skills
 
-- **Previous step**: ← `oss-submit-pr` - the PR submission
-- **If significant rework**: → `oss-contribute` - re-investigate with the new approach
-- **If minor fixes**: → `oss-submit-pr` - re-verify and push updates
+- **Previous step**: ← `oss-submit-pr`: the PR submission
+- **If significant rework**: → `oss-contribute`: re-investigate with the new approach
+- **If minor fixes**: → `oss-submit-pr`: re-verify and push updates
 - **Loop**: This skill may be invoked multiple times per PR as new reviews come in
 
 ## Anti-patterns
 
-- **DO NOT** dismiss review comments - every comment from a maintainer has a reason
-- **DO NOT** write response comments for the user - they need to explain their own code
-- **DO NOT** write the fix for review comments - show the pattern, user writes the code
-- **DO NOT** argue with reviewers through the LLM - if the user disagrees, they should discuss directly and respectfully
-- **DO NOT** batch all fixes into one response - address each comment individually with its own commit if the repo prefers it
+- **DO NOT** dismiss review comments. every comment from a maintainer has a reason
+- **DO NOT** write response comments for the user. they need to explain their own code
+- **DO NOT** write the fix for review comments. show the pattern, user writes the code
+- **DO NOT** argue with reviewers through the LLM. if the user disagrees, they should discuss directly and respectfully
+- **DO NOT** batch all fixes into one response. address each comment individually with its own commit if the repo prefers it
