@@ -1,6 +1,6 @@
 # OSS-Skills
 
-**8 Claude Code skills that walk you through your first open source contribution.** Install in 30 seconds. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
+**15 Claude Code skills that walk you through your first open source contribution — and your tenth.** Install in 30 seconds. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
 
 Built by a GSoC mentor who got tired of watching contributors make the same avoidable mistakes - picking issues nobody maintains, skipping CONTRIBUTING.md, submitting PRs that ignore the repo's conventions, and not being able to explain their own code during review.
 
@@ -57,16 +57,43 @@ For project-local install: `./setup --local`
 
 ## The skills
 
+### Evaluation
+
+| Skill | Role | What it does |
+|-------|------|-------------|
+| `/oss-evaluate-repo` | Analyst | Assesses project health, governance, bus factor, community before you invest time. Prevents wasting weeks on abandoned repos |
+
 ### Contribution pipeline
 
 | Skill | Role | What it does |
 |-------|------|-------------|
 | `/oss-find-issue` | Scout | Finds unclaimed issues from maintainers, checks if repo accepts outside contributions, matches to your skills |
 | `/oss-prep-to-contribute` | Tutor | Reads all docs, maps the codebase, checks your knowledge gaps, won't let you code until you can explain the architecture |
+| `/oss-setup-dev-env` | Mechanic | Gets the repo building, testing, and linting on your machine. Reads CI config as source of truth when README is stale. IDE hints for VS Code, JetBrains, Cursor, Windsurf, Neovim |
 | `/oss-contribute` | Pair programmer | Traces code paths, finds patterns. You describe the logic, it helps you implement. Won't write code until you explain what it should do |
 | `/oss-submit-pr` | Reviewer | Pre-flight checks (tests, lint, rebase). Reviews your diff. You write the PR description, it tells you what to cut. Finds and enforces PR templates |
 | `/oss-post-pr` | Translator | Decodes terse reviewer comments. Finds codebase examples of what they want. You explain the feedback before fixing |
 | `/oss-find-real-issues` | Auditor | Finds real code problems not in the tracker (missing tests, error handling gaps). Fetches issue templates before filing. You evaluate what's worth filing |
+
+### Contribution types
+
+| Skill | Role | What it does |
+|-------|------|-------------|
+| `/oss-write-tests` | Test author | Write tests for untested code as a standalone contribution. Highest-value, lowest-risk first contribution. Studies repo test conventions and makes you match them exactly |
+| `/oss-write-docs` | Documentarian | Contribute documentation improvements. Verifies every claim against source code, tests every example, matches the repo's docs voice |
+
+### CI and review
+
+| Skill | Role | What it does |
+|-------|------|-------------|
+| `/oss-debug-ci` | Debugger | CI failed and the error makes no sense. Reads CI config, fetches logs, classifies failure type, determines if it's your fault or pre-existing |
+| `/oss-review-prs` | Reviewer | Review other contributors' PRs to learn the codebase and build maintainer trust. Teaches structured diff reading and comment etiquette |
+
+### Growth
+
+| Skill | Role | What it does |
+|-------|------|-------------|
+| `/oss-second-contribution` | Coach | Your first PR merged. Now what? Plans the transition from one-off contributor to regular. Progressive complexity escalation, relationship building, community presence |
 
 ### Research and learning
 
@@ -76,13 +103,21 @@ For project-local install: `./setup --local`
 | `/oss-learn-stack` | Teacher | When the repo uses tech you don't know, teaches it from the repo's own code. Every example is from the actual codebase, not generic docs |
 
 ```
+  Evaluation:
+  oss-evaluate-repo -> oss-explore-repo -> oss-find-issue
+
   Learning track:
   oss-explore-repo -> oss-learn-stack -> oss-find-issue (or oss-find-real-issues)
 
   Contribution track:
-  oss-find-issue -> oss-prep-to-contribute -> oss-contribute -> oss-submit-pr -> oss-post-pr
-                                                                     ^                |
-                                                                     +-- (rework) ----+
+  oss-find-issue -> oss-prep-to-contribute -> oss-setup-dev-env -> oss-contribute -> oss-submit-pr -> oss-post-pr
+                                                                        |                                  |
+                                              (alternatives) oss-write-tests / oss-write-docs              |
+                                                                                          (CI fails) oss-debug-ci
+                                                                                                           |
+                                                                                              oss-second-contribution
+                                                                                                           |
+                                                                                                   oss-review-prs
 
   oss-find-real-issues -> (file issue) -> oss-contribute -> ...
 ```

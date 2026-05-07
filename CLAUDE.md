@@ -4,12 +4,19 @@
 
 ```
 OSS-Skills/
-├── skills/                        # All 8 skills
+├── skills/                        # All 15 skills
+│   ├── oss-evaluate-repo/         # Assess repo health before investing time
 │   ├── oss-find-issue/            # Find unclaimed issues matching user skills
 │   ├── oss-prep-to-contribute/    # Check eligibility, knowledge gaps, educate
+│   ├── oss-setup-dev-env/         # Set up dev environment for unfamiliar repos
 │   ├── oss-contribute/            # Deep research, user describes logic, skill helps implement
+│   ├── oss-write-tests/           # Write tests as standalone contribution
+│   ├── oss-write-docs/            # Contribute documentation improvements
 │   ├── oss-submit-pr/             # Pre-flight checks, submit PR
 │   ├── oss-post-pr/               # Handle PR review feedback
+│   ├── oss-debug-ci/              # Debug CI failures in unfamiliar pipelines
+│   ├── oss-second-contribution/   # Growth path to regular contributor
+│   ├── oss-review-prs/            # Review PRs to learn and build trust
 │   ├── oss-find-real-issues/      # Find code issues not in the tracker
 │   ├── oss-explore-repo/          # Guided codebase exploration (architecture, patterns)
 │   └── oss-learn-stack/           # Learn unfamiliar tech from the repo's own code
@@ -50,10 +57,22 @@ Sections within each SKILL.md:
 
 Skills reference each other at handoff points:
 
+**Evaluation:**
+- `oss-evaluate-repo` → `oss-explore-repo` → `oss-find-issue`
+
 **Contribution track:**
-- `oss-find-issue` → `oss-prep-to-contribute` → `oss-contribute` → `oss-submit-pr` → `oss-post-pr`
+- `oss-find-issue` → `oss-prep-to-contribute` → `oss-setup-dev-env` → `oss-contribute` → `oss-submit-pr` → `oss-post-pr`
 - `oss-post-pr` → `oss-contribute` (rework) or `oss-submit-pr` (minor fixes)
+- `oss-post-pr` → `oss-debug-ci` (when CI fails)
+- `oss-post-pr` → `oss-second-contribution` (after merge)
 - `oss-find-real-issues` → `oss-find-issue` or `oss-contribute`
+
+**Contribution types (alternatives to oss-contribute):**
+- `oss-write-tests` — test contributions as standalone entry point
+- `oss-write-docs` — documentation contributions
+
+**Growth track:**
+- `oss-second-contribution` → `oss-review-prs` → `oss-find-issue` (next contribution)
 
 **Learning track:**
 - `oss-explore-repo` → `oss-find-issue` or `oss-find-real-issues`
