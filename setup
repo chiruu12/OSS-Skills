@@ -15,7 +15,7 @@ for arg in "$@"; do
       echo "  --local    Install skills relative to current project (.claude/skills/)"
       echo "             instead of global (~/.claude/skills/)"
       echo ""
-      echo "OSS-Skills: Eight Claude Code skills for open source contributors."
+      echo "OSS-Skills: 15 Claude Code skills for open source contributors."
       echo "https://github.com/chiruu12/OSS-Skills"
       exit 0
       ;;
@@ -72,17 +72,24 @@ echo ""
 
 # Install skills
 SKILLS=(
+  oss-evaluate-repo
   oss-find-issue
   oss-prep-to-contribute
+  oss-setup-dev-env
   oss-contribute
+  oss-write-tests
+  oss-write-docs
   oss-submit-pr
   oss-post-pr
+  oss-debug-ci
+  oss-second-contribution
+  oss-review-prs
   oss-find-real-issues
   oss-explore-repo
   oss-learn-stack
 )
 
-echo "Installing 8 skills..."
+echo "Installing 15 skills..."
 
 INSTALLED=0
 for skill in "${SKILLS[@]}"; do
@@ -105,13 +112,32 @@ echo ""
 echo "Done. $INSTALLED skills installed."
 echo ""
 echo "Available skills:"
+echo ""
+echo "  Evaluation:"
+echo "  /oss-evaluate-repo       Assess repo health before investing time"
+echo ""
+echo "  Contribution pipeline:"
 echo "  /oss-find-issue          Find unclaimed issues matching your skills"
 echo "  /oss-prep-to-contribute  Prepare to contribute (docs, eligibility, knowledge check)"
+echo "  /oss-setup-dev-env       Set up dev environment for unfamiliar repos"
 echo "  /oss-contribute          Research the issue, you describe the logic"
 echo "  /oss-submit-pr           Submit a PR following repo guidelines"
 echo "  /oss-post-pr             Handle PR review feedback"
-echo "  /oss-find-real-issues    Find real code issues not in the tracker"
-echo "  /oss-explore-repo       Guided codebase exploration (architecture, patterns)"
-echo "  /oss-learn-stack        Learn unfamiliar tech from the repo's own code"
 echo ""
-echo "Start with: /oss-find-issue or /oss-explore-repo"
+echo "  Contribution types:"
+echo "  /oss-write-tests         Write tests as a standalone contribution"
+echo "  /oss-write-docs          Contribute documentation improvements"
+echo ""
+echo "  CI and review:"
+echo "  /oss-debug-ci            Debug CI failures in unfamiliar pipelines"
+echo "  /oss-review-prs          Review PRs to learn and build trust"
+echo ""
+echo "  Growth:"
+echo "  /oss-second-contribution Plan your path to regular contributor"
+echo ""
+echo "  Research:"
+echo "  /oss-find-real-issues    Find real code issues not in the tracker"
+echo "  /oss-explore-repo        Guided codebase exploration"
+echo "  /oss-learn-stack         Learn unfamiliar tech from the repo's own code"
+echo ""
+echo "Start with: /oss-evaluate-repo, /oss-find-issue, or /oss-explore-repo"
