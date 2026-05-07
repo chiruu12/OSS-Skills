@@ -89,7 +89,7 @@ SKILLS=(
   oss-learn-stack
 )
 
-echo "Installing 15 skills..."
+echo "Installing ${#SKILLS[@]} skills..."
 
 INSTALLED=0
 for skill in "${SKILLS[@]}"; do

@@ -50,8 +50,8 @@ ls docusaurus.config.* mkdocs.yml conf.py book.toml .readthedocs.yml 2>/dev/null
 
 # Find broken links in docs
 grep -rn '\[.*\](.*\.md)' docs/ README.md | while read line; do
-  file=$(echo "$line" | grep -oP '\((\K[^)]+\.md)')
-  [ ! -f "$file" ] && echo "Broken link: $line"
+  file=$(echo "$line" | sed -n 's/.*(\([^)]*\.md\)).*/\1/p')
+  [ -n "$file" ] && [ ! -f "$file" ] && echo "Broken link: $line"
 done
 
 # Find code examples and check if they reference current APIs

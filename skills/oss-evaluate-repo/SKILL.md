@@ -73,7 +73,7 @@ Who runs this project, and what happens if they leave?
 gh api repos/{owner}/{repo}/contributors --jq '.[0:10] | .[] | "\(.contributions)\t\(.login)"'
 
 # Recent committers (who's active NOW, not historically)
-gh api repos/{owner}/{repo}/commits --jq '[.[0:50] | .[].author.login] | group_by(.) | map({user: .[0], commits: length}) | sort_by(-.commits) | .[0:5] | .[] | "\(.commits)\t\(.user)"'
+gh api repos/{owner}/{repo}/commits --jq '[.[0:50] | .[].author.login // "unknown"] | sort | group_by(.) | map({user: .[0], commits: length}) | sort_by(-.commits) | .[0:5] | .[] | "\(.commits)\t\(.user)"'
 
 # Check if it's an org or personal project
 gh api repos/{owner}/{repo} --jq '.owner.type'
@@ -92,7 +92,7 @@ A healthy community means your contributions get reviewed, your questions get an
 ```bash
 # Issue responsiveness — how quickly do issues get responses?
 gh issue list -R {owner}/{repo} --state closed --limit 20 --json number,createdAt,closedAt,comments \
-  --jq '.[] | {number, created: .createdAt[:10], closed: .closedAt[:10], comments: (.comments | length)}'
+  --jq '.[] | {number, created: .createdAt[:10], closed: .closedAt[:10], comments: .comments}'
 
 # PR review turnaround
 gh pr list -R {owner}/{repo} --state merged --limit 20 --json number,createdAt,mergedAt,reviews \
