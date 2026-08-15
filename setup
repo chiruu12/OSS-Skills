@@ -3,141 +3,254 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$SCRIPT_DIR/skills"
-LOCAL_MODE=false
+REPO_URL="https://github.com/chiruu12/OSS-Skills"
 
-# Parse args
-for arg in "$@"; do
-  case "$arg" in
-    --local) LOCAL_MODE=true ;;
-    --help|-h)
-      echo "Usage: ./setup [--local]"
-      echo ""
-      echo "  --local    Install skills relative to current project (.claude/skills/)"
-      echo "             instead of global (~/.claude/skills/)"
-      echo ""
-      echo "OSS-Skills: 15 Claude Code skills for open source contributors."
-      echo "https://github.com/chiruu12/OSS-Skills"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $arg"
-      echo "Run ./setup --help for usage."
-      exit 1
-      ;;
+TARGET=""
+LOCAL_MODE=false
+DEST=""
+
+# ---------------------------------------------------------------- helpers
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+skill_names() {
+  local d
+  for d in "$SKILLS_DIR"/oss-*/; do
+    [ -f "$d/SKILL.md" ] && basename "$d"
+  done
+}
+
+# First line of the YAML block-scalar description in a SKILL.md.
+skill_summary() {
+  awk '
+    /^description:/ { indesc = 1; next }
+    indesc && /^[a-zA-Z_-]+:/ { exit }
+    indesc && /^---/ { exit }
+    indesc && NF { sub(/^[ \t]+/, ""); print; exit }
+  ' "$SKILLS_DIR/$1/SKILL.md"
+}
+
+# Strip YAML frontmatter so the body can be embedded in a plain rules file.
+skill_body() {
+  awk 'NR==1 && /^---$/ { fm = 1; next } fm && /^---$/ { fm = 0; next } !fm' \
+    "$SKILLS_DIR/$1/SKILL.md"
+}
+
+usage() {
+  cat <<EOF
+OSS-Skills setup
+
+Usage: ./setup [--target <platform>] [--local] [--dest <path>]
+
+Targets:
+  claude      Claude Code           ~/.claude/skills (or .claude/skills with --local)
+  agents      AGENTS.md standard    AGENTS.md + .oss-skills/   [works with ~25 tools]
+  cursor      Cursor                .cursor/rules/
+  cline       Cline                 .clinerules/
+  copilot     GitHub Copilot        .github/copilot-instructions.md + .oss-skills/
+  windsurf    Windsurf              .windsurf/rules/
+  zed         Zed                   .rules + .oss-skills/
+  gemini      Gemini CLI            GEMINI.md + .oss-skills/
+  kiro        Kiro IDE              .kiro/skills/
+
+  With no --target, Claude Code is used.
+
+Options:
+  --local     For claude, install into the current project instead of \$HOME.
+  --dest      Install into an explicit directory instead of the current one.
+  --list      List targets and exit.
+  --help      This message.
+
+The 'agents' target writes the AGENTS.md format stewarded by the Agentic AI
+Foundation, which Codex, Cursor, Zed, Aider, Goose, Amp, Jules, Junie, Devin,
+RooCode, Gemini CLI, Copilot and others all read. Pick it if your tool is not
+listed above.
+
+$REPO_URL
+EOF
+}
+
+# Writes .oss-skills/<name>.md for every skill, into \$1.
+install_bodies() {
+  local root="$1" name
+  mkdir -p "$root/.oss-skills"
+  for name in $(skill_names); do
+    skill_body "$name" > "$root/.oss-skills/$name.md"
+  done
+}
+
+# Emits a router file listing every skill and pointing at .oss-skills/.
+# \$1 = title
+write_router() {
+  local title="$1" name
+  echo "# $title"
+  echo
+  echo "Structured workflows for contributing to open source projects."
+  echo "Source: $REPO_URL"
+  echo
+  echo "When the user wants to do one of the things below, read the matching"
+  echo "file under \`.oss-skills/\` in full and follow it step by step. Do not"
+  echo "work from this summary alone, it only exists to route."
+  echo
+  for name in $(skill_names); do
+    echo "- \`.oss-skills/$name.md\` - $(skill_summary "$name")"
+  done
+  echo
+  echo "## Order"
+  echo
+  echo "Evaluate: oss-evaluate-repo, oss-explore-repo, oss-find-issue"
+  echo "Contribute: oss-find-issue, oss-prep-to-contribute, oss-setup-dev-env, oss-contribute, oss-submit-pr, oss-post-pr"
+  echo "Instead of oss-contribute: oss-write-tests or oss-write-docs"
+  echo "After a merge: oss-second-contribution, oss-review-prs"
+  echo "Learning: oss-explore-repo, oss-learn-stack"
+  echo
+  echo "## Core rule"
+  echo
+  echo "The user describes the logic before any code is written. Every skill has"
+  echo "thinking gates, which are points where you stop and make the user explain"
+  echo "their reasoning. Do not skip them and do not answer them on the user's"
+  echo "behalf. A contribution the user does not understand is worth nothing to them."
+}
+
+# Copies each skill to its own file in \$1, with extension \$2.
+install_split() {
+  local dir="$1" ext="$2" name
+  mkdir -p "$dir"
+  for name in $(skill_names); do
+    cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
+  done
+}
+
+# ---------------------------------------------------------------- args
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target) TARGET="${2:-}"; shift 2 ;;
+    --target=*) TARGET="${1#*=}"; shift ;;
+    --dest) DEST="${2:-}"; shift 2 ;;
+    --dest=*) DEST="${1#*=}"; shift ;;
+    --local) LOCAL_MODE=true; shift ;;
+    --list)
+      echo "claude agents cursor cline copilot windsurf zed gemini kiro"
+      exit 0 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; echo "Run ./setup --help" >&2; exit 1 ;;
   esac
 done
 
-echo "OSS-Skills Setup"
-echo "================"
-echo ""
+TARGET="${TARGET:-claude}"
+[ -d "$SKILLS_DIR" ] || die "skills/ not found. Run this from the OSS-Skills repo root."
 
-# Determine install target
-if [ "$LOCAL_MODE" = true ]; then
-  TARGET_DIR="$(pwd)/.claude/skills"
-  echo "Installing to project: $TARGET_DIR"
-else
-  TARGET_DIR="$HOME/.claude/skills"
-  echo "Installing globally: $TARGET_DIR"
-fi
+COUNT=$(skill_names | wc -l | tr -d ' ')
+[ "$COUNT" -gt 0 ] || die "No skills found in $SKILLS_DIR."
 
-mkdir -p "$TARGET_DIR"
+ROOT="${DEST:-$(pwd)}"
+[ -d "$ROOT" ] || die "No such directory: $ROOT"
 
-# Check prerequisites
-echo ""
-echo "Checking prerequisites..."
+echo "OSS-Skills"
+echo "=========="
+echo
 
-if ! command -v gh &>/dev/null; then
-  echo "  ERROR: 'gh' CLI not found. All skills require it."
-  echo "  Install: https://cli.github.com/"
-  echo ""
-  echo "  Skills will be installed, but they won't work without gh."
-  echo "  Install gh, run 'gh auth login', then try the skills."
-else
-  echo "  gh CLI: found"
-  if gh auth status &>/dev/null 2>&1; then
-    echo "  gh auth: authenticated"
-  else
-    echo "  WARNING: gh not authenticated. Run 'gh auth login' before using skills."
-  fi
-fi
+# ---------------------------------------------------------------- prereqs
 
 if ! command -v git &>/dev/null; then
-  echo "  ERROR: git not found. Cannot continue."
-  exit 1
-else
-  echo "  git: found"
+  die "git not found."
 fi
 
-echo ""
+if ! command -v gh &>/dev/null; then
+  echo "WARNING: 'gh' CLI not found. Every skill uses it for GitHub operations."
+  echo "         Install from https://cli.github.com/ then run 'gh auth login'."
+  echo
+elif ! gh auth status &>/dev/null 2>&1; then
+  echo "WARNING: gh is installed but not authenticated. Run 'gh auth login'."
+  echo
+fi
 
-# Install skills
-SKILLS=(
-  oss-evaluate-repo
-  oss-find-issue
-  oss-prep-to-contribute
-  oss-setup-dev-env
-  oss-contribute
-  oss-write-tests
-  oss-write-docs
-  oss-submit-pr
-  oss-post-pr
-  oss-debug-ci
-  oss-second-contribution
-  oss-review-prs
-  oss-find-real-issues
-  oss-explore-repo
-  oss-learn-stack
-)
+# ---------------------------------------------------------------- install
 
-echo "Installing ${#SKILLS[@]} skills..."
+case "$TARGET" in
+  claude)
+    if [ "$LOCAL_MODE" = true ]; then
+      DIR="$ROOT/.claude/skills"
+    else
+      DIR="$HOME/.claude/skills"
+    fi
+    mkdir -p "$DIR"
+    for name in $(skill_names); do
+      mkdir -p "$DIR/$name"
+      cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+    done
+    WHERE="$DIR"
+    NOTE="Invoke with /oss-find-issue, /oss-contribute, and so on."
+    ;;
 
-INSTALLED=0
-for skill in "${SKILLS[@]}"; do
-  skill_target="$TARGET_DIR/$skill"
-  mkdir -p "$skill_target"
-  if cp "$SKILLS_DIR/$skill/SKILL.md" "$skill_target/SKILL.md" 2>/dev/null; then
-    echo "  $skill"
-    INSTALLED=$((INSTALLED + 1))
-  else
-    echo "  FAILED: $skill"
-  fi
+  agents)
+    install_bodies "$ROOT"
+    write_router "OSS Contribution Skills" > "$ROOT/AGENTS.md"
+    WHERE="$ROOT/AGENTS.md and $ROOT/.oss-skills/"
+    NOTE="Ask your agent to follow the oss-find-issue workflow to start."
+    ;;
+
+  gemini)
+    install_bodies "$ROOT"
+    write_router "OSS Contribution Skills" > "$ROOT/GEMINI.md"
+    WHERE="$ROOT/GEMINI.md and $ROOT/.oss-skills/"
+    NOTE="Gemini CLI reads GEMINI.md automatically."
+    ;;
+
+  copilot)
+    install_bodies "$ROOT"
+    mkdir -p "$ROOT/.github"
+    write_router "OSS Contribution Skills" > "$ROOT/.github/copilot-instructions.md"
+    WHERE="$ROOT/.github/copilot-instructions.md and $ROOT/.oss-skills/"
+    NOTE="Copilot reads .github/copilot-instructions.md as repo context."
+    ;;
+
+  zed)
+    install_bodies "$ROOT"
+    write_router "OSS Contribution Skills" > "$ROOT/.rules"
+    WHERE="$ROOT/.rules and $ROOT/.oss-skills/"
+    NOTE="Zed reads .rules from the project root."
+    ;;
+
+  cursor)
+    install_split "$ROOT/.cursor/rules" mdc
+    WHERE="$ROOT/.cursor/rules/"
+    NOTE="Reference a workflow in chat, for example: follow the oss-contribute skill."
+    ;;
+
+  cline)
+    install_split "$ROOT/.clinerules" md
+    WHERE="$ROOT/.clinerules/"
+    NOTE="Cline loads .clinerules/ automatically."
+    ;;
+
+  windsurf)
+    install_split "$ROOT/.windsurf/rules" md
+    WHERE="$ROOT/.windsurf/rules/"
+    NOTE="Windsurf loads .windsurf/rules/ automatically."
+    ;;
+
+  kiro)
+    install_split "$ROOT/.kiro/skills" md
+    WHERE="$ROOT/.kiro/skills/"
+    NOTE="Reference the skills from your Kiro workflow definitions."
+    ;;
+
+  *)
+    die "Unknown target: $TARGET. Run ./setup --list for the supported ones."
+    ;;
+esac
+
+# ---------------------------------------------------------------- report
+
+echo "Installed $COUNT skills for $TARGET."
+echo "  $WHERE"
+echo
+skill_names | while read -r name; do
+  printf '  %-24s %s\n' "$name" "$(skill_summary "$name")"
 done
-
-if [ "$INSTALLED" -ne "${#SKILLS[@]}" ]; then
-  echo ""
-  echo "WARNING: Only $INSTALLED/${#SKILLS[@]} skills installed. Check file permissions."
-fi
-
-echo ""
-echo "Done. $INSTALLED skills installed."
-echo ""
-echo "Available skills:"
-echo ""
-echo "  Evaluation:"
-echo "  /oss-evaluate-repo       Assess repo health before investing time"
-echo ""
-echo "  Contribution pipeline:"
-echo "  /oss-find-issue          Find unclaimed issues matching your skills"
-echo "  /oss-prep-to-contribute  Prepare to contribute (docs, eligibility, knowledge check)"
-echo "  /oss-setup-dev-env       Set up dev environment for unfamiliar repos"
-echo "  /oss-contribute          Research the issue, you describe the logic"
-echo "  /oss-submit-pr           Submit a PR following repo guidelines"
-echo "  /oss-post-pr             Handle PR review feedback"
-echo ""
-echo "  Contribution types:"
-echo "  /oss-write-tests         Write tests as a standalone contribution"
-echo "  /oss-write-docs          Contribute documentation improvements"
-echo ""
-echo "  CI and review:"
-echo "  /oss-debug-ci            Debug CI failures in unfamiliar pipelines"
-echo "  /oss-review-prs          Review PRs to learn and build trust"
-echo ""
-echo "  Growth:"
-echo "  /oss-second-contribution Plan your path to regular contributor"
-echo ""
-echo "  Research:"
-echo "  /oss-find-real-issues    Find real code issues not in the tracker"
-echo "  /oss-explore-repo        Guided codebase exploration"
-echo "  /oss-learn-stack         Learn unfamiliar tech from the repo's own code"
-echo ""
-echo "Start with: /oss-evaluate-repo, /oss-find-issue, or /oss-explore-repo"
+echo
+echo "$NOTE"
+echo
+echo "Start with oss-evaluate-repo, oss-find-issue, or oss-explore-repo."
