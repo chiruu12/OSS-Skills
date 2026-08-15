@@ -68,8 +68,8 @@ Skills reference each other at handoff points:
 - `oss-find-real-issues` → `oss-find-issue` or `oss-contribute`
 
 **Contribution types (alternatives to oss-contribute):**
-- `oss-write-tests` — test contributions as standalone entry point
-- `oss-write-docs` — documentation contributions
+- `oss-write-tests` - test contributions as standalone entry point
+- `oss-write-docs` - documentation contributions
 
 **Growth track:**
 - `oss-second-contribution` → `oss-review-prs` → `oss-find-issue` (next contribution)
