@@ -82,5 +82,7 @@ everywhere.
 cd OSS-Skills && git pull && ./setup --target <your-target>
 ```
 
-Re-running overwrites the installed copies. Anything you added yourself outside
-`.oss-skills/` is left alone.
+Re-running updates the installed copies in place. If a target writes into a
+shared file such as `AGENTS.md`, only the block between the OSS-SKILLS markers
+is rewritten, so your own instructions in that file are kept. Skill files from
+a previous version that no longer exist are removed.

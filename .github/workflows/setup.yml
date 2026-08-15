@@ -103,6 +103,53 @@ jobs:
           done
           exit $fail
 
+      - name: Existing project instructions survive installation
+        run: |
+          fail=0
+          for pair in "agents:AGENTS.md" "gemini:GEMINI.md" "zed:.rules" "copilot:.github/copilot-instructions.md"; do
+            t="${pair%%:*}"; f="${pair#*:}"
+            d=$(mktemp -d)
+            mkdir -p "$d/$(dirname "$f")"
+            printf '# My Project\n\nNever touch vendor/.\n' > "$d/$f"
+
+            ./setup --target "$t" --dest "$d" >/dev/null
+            grep -q 'Never touch vendor/' "$d/$f" || {
+              echo "::error::$t destroyed an existing $f"; fail=1; continue; }
+
+            # Re-running must update the block in place, not stack copies.
+            ./setup --target "$t" --dest "$d" >/dev/null
+            ./setup --target "$t" --dest "$d" >/dev/null
+            blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$f")
+            [ "$blocks" -eq 1 ] || {
+              echo "::error::$t left $blocks managed blocks in $f after 3 runs"; fail=1; }
+            [ "$(grep -c 'My Project' "$d/$f")" -eq 1 ] || {
+              echo "::error::$t duplicated user content in $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Renamed skills do not linger, user files are kept
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          touch "$d/.oss-skills/oss-removed.md"
+          ./setup --target agents --dest "$d" >/dev/null
+          [ -f "$d/.oss-skills/oss-removed.md" ] && {
+            echo "::error::a removed skill survived reinstall"; fail=1; }
+
+          d=$(mktemp -d)
+          mkdir -p "$d/.cursor/rules"
+          echo mine > "$d/.cursor/rules/my-own.mdc"
+          ./setup --target cursor --dest "$d" >/dev/null
+          touch "$d/.cursor/rules/oss-removed.mdc"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/my-own.mdc" ] || {
+            echo "::error::cursor deleted a rule the user wrote"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-removed.mdc" ] && {
+            echo "::error::cursor kept a stale managed rule"; fail=1; }
+
+          exit $fail
+
       - name: Claude target installs to the project
         run: |
           count=$(ls -d skills/oss-*/ | wc -l | tr -d ' ')

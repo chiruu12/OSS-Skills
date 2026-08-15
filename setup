@@ -70,19 +70,26 @@ $REPO_URL
 EOF
 }
 
-# Writes .oss-skills/<name>.md for every skill, into \$1.
+BEGIN_MARKER="<!-- OSS-SKILLS:BEGIN - managed by ./setup, edits here are overwritten -->"
+END_MARKER="<!-- OSS-SKILLS:END -->"
+
+# Writes .oss-skills/<name>.md for every skill, into \$1. Skills that no longer
+# exist are dropped, so a rename does not leave the old workflow behind.
 install_bodies() {
   local root="$1" name
   mkdir -p "$root/.oss-skills"
+  rm -f "$root/.oss-skills"/oss-*.md
   for name in $(skill_names); do
     skill_body "$name" > "$root/.oss-skills/$name.md"
   done
 }
 
-# Emits a router file listing every skill and pointing at .oss-skills/.
+# Emits a router block listing every skill and pointing at .oss-skills/.
 # \$1 = title
 write_router() {
   local title="$1" name
+  echo "$BEGIN_MARKER"
+  echo
   echo "# $title"
   echo
   echo "Structured workflows for contributing to open source projects."
@@ -110,12 +117,45 @@ write_router() {
   echo "thinking gates, which are points where you stop and make the user explain"
   echo "their reasoning. Do not skip them and do not answer them on the user's"
   echo "behalf. A contribution the user does not understand is worth nothing to them."
+  echo
+  echo "$END_MARKER"
 }
 
-# Copies each skill to its own file in \$1, with extension \$2.
+# Puts the router block into \$1 without destroying what is already there.
+# A project that already has its own AGENTS.md keeps every line of it.
+install_router() {
+  local file="$1" title="$2" block
+  block="$(mktemp)"
+  write_router "$title" > "$block"
+
+  mkdir -p "$(dirname "$file")"
+
+  if [ ! -f "$file" ]; then
+    cat "$block" > "$file"
+  elif grep -qF "OSS-SKILLS:BEGIN" "$file"; then
+    # Replace only the block we wrote last time.
+    awk -v b="$block" '
+      index($0, "OSS-SKILLS:BEGIN") { inblock = 1; while ((getline l < b) > 0) print l; close(b); next }
+      index($0, "OSS-SKILLS:END")   { inblock = 0; next }
+      !inblock { print }
+    ' "$file" > "$file.oss-tmp" && mv "$file.oss-tmp" "$file"
+  else
+    # Someone else's file. Append, never truncate.
+    printf '\n' >> "$file"
+    cat "$block" >> "$file"
+    echo "  note: appended to your existing $(basename "$file"), nothing was removed"
+  fi
+
+  rm -f "$block"
+}
+
+# Copies each skill to its own file in \$1, with extension \$2. Managed files
+# from a previous run are cleared first so renamed skills do not linger, but
+# anything not named oss-* belongs to the user and is left alone.
 install_split() {
   local dir="$1" ext="$2" name
   mkdir -p "$dir"
+  rm -f "$dir"/oss-*."$ext"
   for name in $(skill_names); do
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
   done
@@ -186,29 +226,28 @@ case "$TARGET" in
 
   agents)
     install_bodies "$ROOT"
-    write_router "OSS Contribution Skills" > "$ROOT/AGENTS.md"
+    install_router "$ROOT/AGENTS.md" "OSS Contribution Skills"
     WHERE="$ROOT/AGENTS.md and $ROOT/.oss-skills/"
     NOTE="Ask your agent to follow the oss-find-issue workflow to start."
     ;;
 
   gemini)
     install_bodies "$ROOT"
-    write_router "OSS Contribution Skills" > "$ROOT/GEMINI.md"
+    install_router "$ROOT/GEMINI.md" "OSS Contribution Skills"
     WHERE="$ROOT/GEMINI.md and $ROOT/.oss-skills/"
     NOTE="Gemini CLI reads GEMINI.md automatically."
     ;;
 
   copilot)
     install_bodies "$ROOT"
-    mkdir -p "$ROOT/.github"
-    write_router "OSS Contribution Skills" > "$ROOT/.github/copilot-instructions.md"
+    install_router "$ROOT/.github/copilot-instructions.md" "OSS Contribution Skills"
     WHERE="$ROOT/.github/copilot-instructions.md and $ROOT/.oss-skills/"
     NOTE="Copilot reads .github/copilot-instructions.md as repo context."
     ;;
 
   zed)
     install_bodies "$ROOT"
-    write_router "OSS Contribution Skills" > "$ROOT/.rules"
+    install_router "$ROOT/.rules" "OSS Contribution Skills"
     WHERE="$ROOT/.rules and $ROOT/.oss-skills/"
     NOTE="Zed reads .rules from the project root."
     ;;
