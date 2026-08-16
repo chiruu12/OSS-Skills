@@ -84,5 +84,7 @@ cd OSS-Skills && git pull && ./setup --target <your-target>
 
 Re-running updates the installed copies in place. If a target writes into a
 shared file such as `AGENTS.md`, only the block between the OSS-SKILLS markers
-is rewritten, so your own instructions in that file are kept. Skill files from
-a previous version that no longer exist are removed.
+is rewritten, so your own instructions in that file are kept. Targets with a
+rules directory track what they wrote in `.oss-skills-manifest` and clean up
+only those files, so a skill removed upstream goes away and anything you wrote
+yourself stays.

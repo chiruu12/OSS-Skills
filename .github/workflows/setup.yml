@@ -140,15 +140,33 @@ jobs:
           d=$(mktemp -d)
           mkdir -p "$d/.cursor/rules"
           echo mine > "$d/.cursor/rules/my-own.mdc"
+          echo mine > "$d/.cursor/rules/oss-my-own.mdc"
           ./setup --target cursor --dest "$d" >/dev/null
+
+          # A skill installed by an earlier version, then renamed away.
           touch "$d/.cursor/rules/oss-removed.mdc"
+          echo oss-removed.mdc >> "$d/.cursor/rules/.oss-skills-manifest"
           ./setup --target cursor --dest "$d" >/dev/null
+
           [ -f "$d/.cursor/rules/my-own.mdc" ] || {
             echo "::error::cursor deleted a rule the user wrote"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-my-own.mdc" ] || {
+            echo "::error::cursor deleted a user rule just for being named oss-*"; fail=1; }
           [ -f "$d/.cursor/rules/oss-removed.mdc" ] && {
             echo "::error::cursor kept a stale managed rule"; fail=1; }
 
           exit $fail
+
+      - name: A half-written marker block is never rewritten
+        run: |
+          d=$(mktemp -d)
+          printf 'header\n<!-- OSS-SKILLS:BEGIN - x -->\nstale\ntail instructions\n' > "$d/AGENTS.md"
+          if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
+            echo "::error::setup rewrote a file with an unmatched BEGIN marker"
+            exit 1
+          fi
+          grep -q 'tail instructions' "$d/AGENTS.md" || {
+            echo "::error::setup destroyed instructions after an unmatched marker"; exit 1; }
 
       - name: Claude target installs to the project
         run: |

@@ -132,6 +132,13 @@ install_router() {
 
   if [ ! -f "$file" ]; then
     cat "$block" > "$file"
+  elif grep -qF "OSS-SKILLS:BEGIN" "$file" && ! grep -qF "OSS-SKILLS:END" "$file"; then
+    # A half-written block. Rewriting it would eat everything after the
+    # opening marker, so leave the file alone and let a human sort it out.
+    rm -f "$block"
+    die "$file has an OSS-SKILLS:BEGIN marker with no matching OSS-SKILLS:END.
+       Nothing was changed. Remove the stray marker, or delete the partial
+       block by hand, then run setup again."
   elif grep -qF "OSS-SKILLS:BEGIN" "$file"; then
     # Replace only the block we wrote last time.
     awk -v b="$block" '
@@ -149,15 +156,25 @@ install_router() {
   rm -f "$block"
 }
 
-# Copies each skill to its own file in \$1, with extension \$2. Managed files
-# from a previous run are cleared first so renamed skills do not linger, but
-# anything not named oss-* belongs to the user and is left alone.
+# Copies each skill to its own file in \$1, with extension \$2. A manifest
+# records exactly what was written, so the next run can drop a renamed skill
+# without guessing from filenames. Anything setup did not write is left alone,
+# including a file the user happens to have named oss-something.
 install_split() {
-  local dir="$1" ext="$2" name
+  local dir="$1" ext="$2" name manifest old
+  manifest="$dir/.oss-skills-manifest"
   mkdir -p "$dir"
-  rm -f "$dir"/oss-*."$ext"
+
+  if [ -f "$manifest" ]; then
+    while read -r old; do
+      [ -n "$old" ] && rm -f "$dir/$old"
+    done < "$manifest"
+  fi
+
+  : > "$manifest"
   for name in $(skill_names); do
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
+    echo "$name.$ext" >> "$manifest"
   done
 }
 
