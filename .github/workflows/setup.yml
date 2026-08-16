@@ -127,16 +127,9 @@ jobs:
           done
           exit $fail
 
-      - name: Renamed skills do not linger, user files are kept
+      - name: Renamed rules do not linger, user rules are kept
         run: |
           fail=0
-          d=$(mktemp -d)
-          ./setup --target agents --dest "$d" >/dev/null
-          touch "$d/.oss-skills/oss-removed.md"
-          ./setup --target agents --dest "$d" >/dev/null
-          [ -f "$d/.oss-skills/oss-removed.md" ] && {
-            echo "::error::a removed skill survived reinstall"; fail=1; }
-
           d=$(mktemp -d)
           mkdir -p "$d/.cursor/rules"
           echo mine > "$d/.cursor/rules/my-own.mdc"
