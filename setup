@@ -73,14 +73,30 @@ EOF
 BEGIN_MARKER="<!-- OSS-SKILLS:BEGIN - managed by ./setup, edits here are overwritten -->"
 END_MARKER="<!-- OSS-SKILLS:END -->"
 
+# Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
+# starts a fresh manifest. Entries are plain filenames by construction; anything
+# with a path separator is ignored rather than followed out of the directory.
+reset_managed() {
+  local dir="$1" old
+  if [ -f "$dir/.oss-skills-manifest" ]; then
+    while read -r old; do
+      case "$old" in ""|*/*) continue ;; esac
+      rm -f "$dir/$old"
+    done < "$dir/.oss-skills-manifest"
+  fi
+  : > "$dir/.oss-skills-manifest"
+}
+
 # Writes .oss-skills/<name>.md for every skill, into \$1. Skills that no longer
-# exist are dropped, so a rename does not leave the old workflow behind.
+# exist are dropped, so a rename does not leave the old workflow behind. Files
+# setup did not write are left alone, even if they are named oss-something.
 install_bodies() {
   local root="$1" name
   mkdir -p "$root/.oss-skills"
-  rm -f "$root/.oss-skills"/oss-*.md
+  reset_managed "$root/.oss-skills"
   for name in $(skill_names); do
     skill_body "$name" > "$root/.oss-skills/$name.md"
+    echo "$name.md" >> "$root/.oss-skills/.oss-skills-manifest"
   done
 }
 
@@ -124,7 +140,7 @@ write_router() {
 # Puts the router block into \$1 without destroying what is already there.
 # A project that already has its own AGENTS.md keeps every line of it.
 install_router() {
-  local file="$1" title="$2" block
+  local file="$1" title="$2" block begins ends
   block="$(mktemp)"
   write_router "$title" > "$block"
 
@@ -132,20 +148,30 @@ install_router() {
 
   if [ ! -f "$file" ]; then
     cat "$block" > "$file"
-  elif grep -qF "OSS-SKILLS:BEGIN" "$file" && ! grep -qF "OSS-SKILLS:END" "$file"; then
-    # A half-written block. Rewriting it would eat everything after the
-    # opening marker, so leave the file alone and let a human sort it out.
-    rm -f "$block"
-    die "$file has an OSS-SKILLS:BEGIN marker with no matching OSS-SKILLS:END.
-       Nothing was changed. Remove the stray marker, or delete the partial
-       block by hand, then run setup again."
-  elif grep -qF "OSS-SKILLS:BEGIN" "$file"; then
+  elif grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file"; then
+    # Rewriting only makes sense for exactly one well formed block. Any other
+    # arrangement means the replacement would swallow real instructions, or
+    # would leave markers that jam the next run, so stop and change nothing.
+    begins=$(grep -cF "OSS-SKILLS:BEGIN" "$file")
+    ends=$(grep -cF "OSS-SKILLS:END" "$file")
+    if [ "$begins" -ne 1 ] || [ "$ends" -ne 1 ]; then
+      rm -f "$block"
+      die "$file has $begins OSS-SKILLS:BEGIN and $ends OSS-SKILLS:END markers.
+       Exactly one of each is needed to update in place. Nothing was changed.
+       Tidy the markers by hand, then run setup again."
+    fi
+
     # Replace only the block we wrote last time.
     awk -v b="$block" '
       index($0, "OSS-SKILLS:BEGIN") { inblock = 1; while ((getline l < b) > 0) print l; close(b); next }
       index($0, "OSS-SKILLS:END")   { inblock = 0; next }
       !inblock { print }
-    ' "$file" > "$file.oss-tmp" && mv "$file.oss-tmp" "$file"
+      END { if (inblock) exit 1 }
+    ' "$file" > "$file.oss-tmp" || {
+      rm -f "$file.oss-tmp" "$block"
+      die "$file has an OSS-SKILLS:END before its BEGIN. Nothing was changed."
+    }
+    mv "$file.oss-tmp" "$file"
   else
     # Someone else's file. Append, never truncate.
     printf '\n' >> "$file"
@@ -161,20 +187,12 @@ install_router() {
 # without guessing from filenames. Anything setup did not write is left alone,
 # including a file the user happens to have named oss-something.
 install_split() {
-  local dir="$1" ext="$2" name manifest old
-  manifest="$dir/.oss-skills-manifest"
+  local dir="$1" ext="$2" name
   mkdir -p "$dir"
-
-  if [ -f "$manifest" ]; then
-    while read -r old; do
-      [ -n "$old" ] && rm -f "$dir/$old"
-    done < "$manifest"
-  fi
-
-  : > "$manifest"
+  reset_managed "$dir"
   for name in $(skill_names); do
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
-    echo "$name.$ext" >> "$manifest"
+    echo "$name.$ext" >> "$dir/.oss-skills-manifest"
   done
 }
 

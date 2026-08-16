@@ -157,16 +157,45 @@ jobs:
 
           exit $fail
 
-      - name: A half-written marker block is never rewritten
+      - name: Malformed marker blocks are never rewritten
         run: |
+          fail=0
+          # unmatched BEGIN / stray END / a good block followed by a stray BEGIN
+          for case in "<!-- OSS-SKILLS:BEGIN - x -->" \
+                      "<!-- OSS-SKILLS:END -->" \
+                      "<!-- OSS-SKILLS:BEGIN - x -->|<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->"; do
+            d=$(mktemp -d)
+            echo header > "$d/AGENTS.md"
+            echo "$case" | tr '|' '\n' >> "$d/AGENTS.md"
+            echo 'tail instructions' >> "$d/AGENTS.md"
+
+            if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
+              echo "::error::setup rewrote a file with markers: $case"
+              fail=1
+            fi
+            grep -q 'tail instructions' "$d/AGENTS.md" || {
+              echo "::error::setup destroyed instructions for case: $case"; fail=1; }
+          done
+          exit $fail
+
+      - name: Managed cleanup keeps user workflows and stays in its directory
+        run: |
+          fail=0
           d=$(mktemp -d)
-          printf 'header\n<!-- OSS-SKILLS:BEGIN - x -->\nstale\ntail instructions\n' > "$d/AGENTS.md"
-          if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
-            echo "::error::setup rewrote a file with an unmatched BEGIN marker"
-            exit 1
-          fi
-          grep -q 'tail instructions' "$d/AGENTS.md" || {
-            echo "::error::setup destroyed instructions after an unmatched marker"; exit 1; }
+          ./setup --target agents --dest "$d" >/dev/null
+          echo mine > "$d/.oss-skills/oss-my-own.md"
+          echo secret > "$d/keep-me"
+          printf '../keep-me\noss-removed.md\n' >> "$d/.oss-skills/.oss-skills-manifest"
+          touch "$d/.oss-skills/oss-removed.md"
+          ./setup --target agents --dest "$d" >/dev/null
+
+          [ -f "$d/keep-me" ] || {
+            echo "::error::manifest cleanup escaped the rules directory"; fail=1; }
+          [ -f "$d/.oss-skills/oss-my-own.md" ] || {
+            echo "::error::cleanup deleted a workflow the user wrote"; fail=1; }
+          [ -f "$d/.oss-skills/oss-removed.md" ] && {
+            echo "::error::cleanup kept a stale managed workflow"; fail=1; }
+          exit $fail
 
       - name: Claude target installs to the project
         run: |
