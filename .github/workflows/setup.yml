@@ -200,6 +200,37 @@ jobs:
             echo "::error::cleanup kept a stale managed workflow"; fail=1; }
           exit $fail
 
+      - name: A rejected router installs nothing at all
+        run: |
+          fail=0
+          # a good block followed by a stray BEGIN, and an END before its BEGIN
+          for case in "<!-- OSS-SKILLS:BEGIN - x -->|<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->" \
+                      "<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->"; do
+            d=$(mktemp -d)
+            echo header > "$d/AGENTS.md"
+            echo "$case" | tr '|' '\n' >> "$d/AGENTS.md"
+
+            if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
+              echo "::error::setup accepted a router it cannot update: $case"
+              fail=1
+            fi
+            [ -d "$d/.oss-skills" ] && {
+              echo "::error::workflows were installed despite the router being rejected: $case"
+              fail=1; }
+          done
+
+          # and a rejection partway through an existing install changes nothing
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          before=$(find "$d/.oss-skills" -type f | sort | xargs shasum -a 256 | shasum -a 256)
+          printf '\n<!-- OSS-SKILLS:BEGIN - x -->\n' >> "$d/AGENTS.md"
+          ./setup --target agents --dest "$d" >/dev/null 2>&1 && {
+            echo "::error::setup accepted a router with a second BEGIN"; fail=1; }
+          after=$(find "$d/.oss-skills" -type f | sort | xargs shasum -a 256 | shasum -a 256)
+          [ "$before" = "$after" ] || {
+            echo "::error::a rejected router still rewrote the installed workflows"; fail=1; }
+          exit $fail
+
       - name: A manifest entry written without a trailing newline still counts
         run: |
           d=$(mktemp -d)
