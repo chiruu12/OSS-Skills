@@ -88,3 +88,10 @@ is rewritten, so your own instructions in that file are kept. Targets with a
 rules directory track what they wrote in `.oss-skills-manifest` and clean up
 only those files, so a skill removed upstream goes away and anything you wrote
 yourself stays.
+
+`setup` will not write through a symlink it finds at a path it manages, such as
+`AGENTS.md`, a rules directory, or `.oss-skills-manifest`. It stops and tells
+you which path, having changed nothing. This matters when you run it inside a
+repo you just cloned, where a symlink could otherwise point the install at
+files elsewhere on your machine. The directory you pass to `--dest` is your
+own choice and may be a symlink.

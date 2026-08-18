@@ -190,6 +190,71 @@ jobs:
             echo "::error::cleanup kept a stale managed workflow"; fail=1; }
           exit $fail
 
+      - name: Symlinks are refused, never written through
+        run: |
+          fail=0
+
+          check() {
+            # $1 names the case, $2 is the file that must come back untouched.
+            if ./setup --target "$3" --dest "$4" >/dev/null 2>&1; then
+              echo "::error::setup followed a symlink: $1"; fail=1
+            fi
+            [ "$(cat "$2")" = "do not touch" ] || {
+              echo "::error::setup wrote through a symlink: $1"; fail=1; }
+          }
+
+          # the manifest itself
+          d=$(mktemp -d); mkdir -p "$d/proj/.oss-skills" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.oss-skills/.oss-skills-manifest"
+          check "manifest" "$d/out/victim" agents "$d/proj"
+
+          # the router file
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/AGENTS.md"
+          check "router file" "$d/out/victim" agents "$d/proj"
+
+          # a file inside the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj/.cursor/rules" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.cursor/rules/oss-contribute.mdc"
+          check "managed file" "$d/out/victim" cursor "$d/proj"
+
+          # the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out" "$d/proj/.oss-skills"
+          check "managed directory" "$d/out/victim" agents "$d/proj"
+          [ "$(ls -A "$d/out" | tr -d '[:space:]')" = "victim" ] || {
+            echo "::error::setup wrote into a symlinked managed directory"; fail=1; }
+
+          # a symlinked parent of the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out" "$d/proj/.cursor"
+          check "symlinked parent" "$d/out/victim" cursor "$d/proj"
+          [ "$(ls -A "$d/out" | tr -d '[:space:]')" = "victim" ] || {
+            echo "::error::setup created directories through a symlinked parent"; fail=1; }
+
+          exit $fail
+
+      - name: A destination you named yourself may be a symlink
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          mkdir -p "$d/project"
+          ln -s "$d/project" "$d/link"
+          for t in agents cursor copilot; do
+            ./setup --target "$t" --dest "$d/link" >/dev/null || {
+              echo "::error::$t refused a symlinked destination"; fail=1; }
+          done
+          ./setup --target claude --local --dest "$d/link" >/dev/null || {
+            echo "::error::claude --local refused a symlinked destination"; fail=1; }
+          [ -f "$d/project/AGENTS.md" ] || {
+            echo "::error::install did not land in the symlink's target"; fail=1; }
+          exit $fail
+
       - name: Claude target installs to the project
         run: |
           count=$(ls -d skills/oss-*/ | wc -l | tr -d ' ')

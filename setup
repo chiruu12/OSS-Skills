@@ -73,11 +73,49 @@ EOF
 BEGIN_MARKER="<!-- OSS-SKILLS:BEGIN - managed by ./setup, edits here are overwritten -->"
 END_MARKER="<!-- OSS-SKILLS:END -->"
 
+# setup never writes through a symlink. A project you cloned could otherwise
+# ship one at a path setup manages and redirect the write anywhere the user can
+# write, which is the one way an installer turns into a way to lose files.
+no_symlink() {
+  [ ! -L "$1" ] || die "$1 is a symlink.
+       setup does not write through symlinks, because the write would land
+       outside the directory you chose. Nothing was changed. Replace it with a
+       real file or directory, then run setup again."
+}
+
+# Same problem one level up: \$2 is only safe if it still resolves to \$1 or
+# somewhere under it after every symlink in the path has been followed.
+inside() {
+  local real_root real_dir
+  real_root="$(cd "$1" && pwd -P)" || die "cannot resolve $1"
+  real_dir="$(cd "$2" && pwd -P)" || die "cannot resolve $2"
+  case "$real_dir/" in
+    "$real_root"/|"$real_root"/*) return 0 ;;
+  esac
+  die "$2 resolves to $real_dir, outside $real_root.
+       A symlink in the path would send this install somewhere else.
+       Nothing was changed."
+}
+
+# Creates a directory setup is about to write into, once it is clear no symlink
+# can move those writes out of \$1. The containment check runs against the
+# deepest part of the path that already exists, so a symlinked parent is refused
+# before mkdir has created anything on the far side of it.
+managed_dir() {
+  local root="$1" dir="$2" existing
+  no_symlink "$dir"
+  existing="$dir"
+  while [ ! -d "$existing" ]; do existing="$(dirname "$existing")"; done
+  inside "$root" "$existing"
+  mkdir -p "$dir"
+}
+
 # Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
 # starts a fresh manifest. Entries are plain filenames by construction; anything
 # with a path separator is ignored rather than followed out of the directory.
 reset_managed() {
   local dir="$1" old
+  no_symlink "$dir/.oss-skills-manifest"
   if [ -f "$dir/.oss-skills-manifest" ]; then
     while read -r old; do
       case "$old" in ""|*/*) continue ;; esac
@@ -92,9 +130,10 @@ reset_managed() {
 # setup did not write are left alone, even if they are named oss-something.
 install_bodies() {
   local root="$1" name
-  mkdir -p "$root/.oss-skills"
+  managed_dir "$root" "$root/.oss-skills"
   reset_managed "$root/.oss-skills"
   for name in $(skill_names); do
+    no_symlink "$root/.oss-skills/$name.md"
     skill_body "$name" > "$root/.oss-skills/$name.md"
     echo "$name.md" >> "$root/.oss-skills/.oss-skills-manifest"
   done
@@ -144,7 +183,8 @@ install_router() {
   block="$(mktemp)"
   write_router "$title" > "$block"
 
-  mkdir -p "$(dirname "$file")"
+  managed_dir "$ROOT" "$(dirname "$file")"
+  no_symlink "$file"
 
   if [ ! -f "$file" ]; then
     cat "$block" > "$file"
@@ -188,9 +228,10 @@ install_router() {
 # including a file the user happens to have named oss-something.
 install_split() {
   local dir="$1" ext="$2" name
-  mkdir -p "$dir"
+  managed_dir "$ROOT" "$dir"
   reset_managed "$dir"
   for name in $(skill_names); do
+    no_symlink "$dir/$name.$ext"
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
     echo "$name.$ext" >> "$dir/.oss-skills-manifest"
   done
@@ -221,6 +262,10 @@ COUNT=$(skill_names | wc -l | tr -d ' ')
 
 ROOT="${DEST:-$(pwd)}"
 [ -d "$ROOT" ] || die "No such directory: $ROOT"
+# Resolved once, so the symlink guards below compare against a physical path.
+# A destination you named yourself is your choice and may well be a symlink;
+# what must not be a symlink is anything setup goes on to create inside it.
+ROOT="$(cd "$ROOT" && pwd -P)"
 
 echo "OSS-Skills"
 echo "=========="
@@ -246,15 +291,24 @@ fi
 case "$TARGET" in
   claude)
     if [ "$LOCAL_MODE" = true ]; then
+      # A project directory is only as trustworthy as whoever you cloned it
+      # from, so it gets the symlink guards. $HOME below is your own, and
+      # people symlink ~/.claude into a dotfiles repo on purpose.
       DIR="$ROOT/.claude/skills"
+      managed_dir "$ROOT" "$DIR"
+      for name in $(skill_names); do
+        managed_dir "$ROOT" "$DIR/$name"
+        no_symlink "$DIR/$name/SKILL.md"
+        cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+      done
     else
       DIR="$HOME/.claude/skills"
+      mkdir -p "$DIR"
+      for name in $(skill_names); do
+        mkdir -p "$DIR/$name"
+        cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+      done
     fi
-    mkdir -p "$DIR"
-    for name in $(skill_names); do
-      mkdir -p "$DIR/$name"
-      cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
-    done
     WHERE="$DIR"
     NOTE="Invoke with /oss-find-issue, /oss-contribute, and so on."
     ;;
