@@ -73,6 +73,19 @@ EOF
 BEGIN_MARKER="<!-- OSS-SKILLS:BEGIN - managed by ./setup, edits here are overwritten -->"
 END_MARKER="<!-- OSS-SKILLS:END -->"
 
+# The marker as a pattern rather than a literal, so a block written by an older
+# version with different wording inside the comment is still recognised. [^>]*
+# cannot cross the comment's own closing -->, so a BEGIN never matches its way
+# into a later END on the same line.
+BEGIN_RE='<!--[^>]*OSS-SKILLS:BEGIN[^>]*-->'
+END_RE='<!--[^>]*OSS-SKILLS:END[^>]*-->'
+
+# Occurrences of a pattern in a file, not lines containing it, so two markers
+# sharing a line count as two. \$1 is grep's pattern flag, -F or -E.
+count_matches() {
+  { grep -o "$1" "$2" "$3" || true; } | wc -l | tr -d ' '
+}
+
 # setup never writes through a symlink. A project you cloned could otherwise
 # ship one at a path setup manages and redirect the write anywhere the user can
 # write, which is the one way an installer turns into a way to lose files.
@@ -179,7 +192,7 @@ write_router() {
 # Puts the router block into \$1 without destroying what is already there.
 # A project that already has its own AGENTS.md keeps every line of it.
 install_router() {
-  local file="$1" title="$2" block begins ends
+  local file="$1" title="$2" block tokens_b tokens_e begins ends
   block="$(mktemp)"
   write_router "$title" > "$block"
 
@@ -189,27 +202,50 @@ install_router() {
   if [ ! -f "$file" ]; then
     cat "$block" > "$file"
   elif grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file"; then
-    # Rewriting only makes sense for exactly one well formed block. Any other
-    # arrangement means the replacement would swallow real instructions, or
-    # would leave markers that jam the next run, so stop and change nothing.
-    begins=$(grep -cF "OSS-SKILLS:BEGIN" "$file")
-    ends=$(grep -cF "OSS-SKILLS:END" "$file")
-    if [ "$begins" -ne 1 ] || [ "$ends" -ne 1 ]; then
+    # Rewriting only makes sense for exactly one well formed comment of each
+    # kind. Count occurrences rather than lines, so two markers sharing a line
+    # are still seen as two, and count the bare tokens as well, so a marker
+    # someone retyped without its comment wrapper is caught instead of being
+    # quietly skipped by the replacement below.
+    tokens_b=$(count_matches -F "OSS-SKILLS:BEGIN" "$file")
+    tokens_e=$(count_matches -F "OSS-SKILLS:END" "$file")
+    begins=$(count_matches -E "$BEGIN_RE" "$file")
+    ends=$(count_matches -E "$END_RE" "$file")
+    if [ "$tokens_b" -ne 1 ] || [ "$tokens_e" -ne 1 ] ||
+       [ "$begins" -ne 1 ] || [ "$ends" -ne 1 ]; then
       rm -f "$block"
-      die "$file has $begins OSS-SKILLS:BEGIN and $ends OSS-SKILLS:END markers.
-       Exactly one of each is needed to update in place. Nothing was changed.
-       Tidy the markers by hand, then run setup again."
+      die "$file has $tokens_b OSS-SKILLS:BEGIN and $tokens_e OSS-SKILLS:END markers,
+       of which $begins and $ends are well formed HTML comments. Exactly one well
+       formed marker of each kind is needed to update in place. Nothing was
+       changed. Tidy the markers by hand, then run setup again."
     fi
 
-    # Replace only the block we wrote last time.
-    awk -v b="$block" '
-      index($0, "OSS-SKILLS:BEGIN") { inblock = 1; while ((getline l < b) > 0) print l; close(b); next }
-      index($0, "OSS-SKILLS:END")   { inblock = 0; next }
-      !inblock { print }
+    # Replace only the block we wrote last time. The markers delimit a region,
+    # not whole lines, so anything sharing a line with them is kept: a file
+    # holding the whole block on one line updates like any other.
+    awk -v b="$block" -v bre="$BEGIN_RE" -v ere="$END_RE" '
+      function emit_block(   l) {
+        while ((getline l < b) > 0) print l
+        close(b)
+      }
+      {
+        line = $0
+        if (!inblock) {
+          if (!match(line, bre)) { print line; next }
+          if (substr(line, 1, RSTART - 1) ~ /[^ \t]/) print substr(line, 1, RSTART - 1)
+          emit_block()
+          inblock = 1
+          line = substr(line, RSTART + RLENGTH)
+        }
+        if (match(line, ere)) {
+          inblock = 0
+          if (substr(line, RSTART + RLENGTH) ~ /[^ \t]/) print substr(line, RSTART + RLENGTH)
+        }
+      }
       END { if (inblock) exit 1 }
     ' "$file" > "$file.oss-tmp" || {
       rm -f "$file.oss-tmp" "$block"
-      die "$file has an OSS-SKILLS:END before its BEGIN. Nothing was changed."
+      die "$file has its OSS-SKILLS:END marker before its BEGIN. Nothing was changed."
     }
     mv "$file.oss-tmp" "$file"
   else
