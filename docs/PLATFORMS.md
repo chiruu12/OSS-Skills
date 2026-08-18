@@ -86,9 +86,9 @@ Re-running updates the installed copies in place. If a target writes into a
 shared file such as `AGENTS.md`, only the block between the OSS-SKILLS markers
 is rewritten, so your own instructions in that file are kept. Targets with a
 rules directory record what they wrote in `.oss-skills-manifest`, along with a
-checksum of each file. Cleanup removes a file only when it is still exactly what
-`setup` put there, so a skill removed upstream goes away, while anything you
-wrote or edited yourself stays.
+checksum of each file. Cleanup removes a file only when its name is one `setup`
+installs and its contents are still exactly what `setup` put there, so a skill
+removed upstream goes away, while anything you wrote or edited yourself stays.
 
 `setup` will not write through a symlink it finds at a path it manages, such as
 `AGENTS.md`, a rules directory, or `.oss-skills-manifest`. It stops and tells

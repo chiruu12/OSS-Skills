@@ -168,18 +168,25 @@ managed_dir() {
 }
 
 # Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
-# starts a fresh manifest. Every entry is a checksum and a plain filename, and a
-# file is removed only when it is still byte for byte what setup wrote. A
-# manifest that arrived with a repo you cloned therefore cannot name one of your
-# files and have setup delete it, and a managed file you edited yourself is left
-# alone rather than cleaned up. The read keeps a final entry that was written
-# without a trailing newline.
+# starts a fresh manifest. Two things have to hold before anything is deleted:
+# the name is one setup itself installs, oss-<skill> with a markdown extension,
+# and the file is still byte for byte what setup wrote. A checksum alone is not
+# proof of authorship, since a manifest that arrived with a repo you cloned can
+# carry the correct hash of a file it also shipped; requiring the name as well
+# keeps that trick inside the namespace setup already owns and overwrites. So a
+# file of yours under any other name is never removed however the manifest
+# describes it, and a managed file you edited yourself is left alone rather than
+# cleaned up. The read keeps a final entry written without a trailing newline.
 reset_managed() {
   local dir="$1" sum name
   no_symlink "$dir/.oss-skills-manifest"
   if [ -f "$dir/.oss-skills-manifest" ]; then
     while read -r sum name || [ -n "$sum" ]; do
-      case "$name" in ""|.|..|*/*) continue ;; esac
+      case "$name" in
+        ""|.|..|*/*) continue ;;
+        oss-*.md|oss-*.mdc) ;;
+        *) continue ;;
+      esac
       case "$sum" in *[!0-9a-f]*) continue ;; esac
       [ "${#sum}" -eq 64 ] || continue
       [ -f "$dir/$name" ] && [ ! -L "$dir/$name" ] || continue

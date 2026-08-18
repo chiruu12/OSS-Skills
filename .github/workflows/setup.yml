@@ -364,6 +364,17 @@ jobs:
           [ -f "$d/.cursor/rules/oss-decoy.mdc" ] || {
             echo "::error::a supplied manifest deleted an oss-named file setup never wrote"; fail=1; }
 
+          # a correct checksum is not authorship either: a repo can ship a file
+          # and the matching hash. Names outside the oss-* namespace stay put.
+          d=$(mktemp -d); mkdir -p "$d/.cursor/rules"
+          echo "my project rules" > "$d/.cursor/rules/keep-me.mdc"
+          printf '%s  keep-me.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/keep-me.mdc" | cut -d' ' -f1)" \
+            > "$d/.cursor/rules/.oss-skills-manifest"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/keep-me.mdc" ] || {
+            echo "::error::a manifest with a correct hash deleted a file setup never wrote"; fail=1; }
+
           # a stale managed file the user has since edited stops being setup's
           # to delete, because it is no longer what setup wrote
           d=$(mktemp -d)
