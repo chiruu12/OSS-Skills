@@ -20,10 +20,16 @@ skill_names() {
   done
 }
 
-# First line of the YAML block-scalar description in a SKILL.md.
+# First line of the description in a SKILL.md, written either inline after the
+# key or as a block scalar under it. The CI lint accepts both, so this must too.
 skill_summary() {
   awk '
-    /^description:/ { indesc = 1; next }
+    /^description:/ {
+      inline = $0
+      sub(/^description:[ \t]*/, "", inline)
+      if (inline != "" && inline !~ /^[|>][0-9+-]*$/) { print inline; exit }
+      indesc = 1; next
+    }
     indesc && /^[a-zA-Z_-]+:/ { exit }
     indesc && /^---/ { exit }
     indesc && NF { sub(/^[ \t]+/, ""); print; exit }
@@ -112,6 +118,16 @@ no_symlink() {
        real file or directory, then run setup again."
 }
 
+# A path setup is about to write a FILE to must be a regular file or absent. A
+# directory there turns `cp` into a copy into that directory, under the source's
+# own name, following whatever the project nested inside it. That is a way out of
+# the destination that checking for a symlink on this path alone does not catch.
+writable_file() {
+  no_symlink "$1"
+  [ ! -d "$1" ] || die "$1 is a directory, and setup needs to write a file there.
+       Nothing was changed. Move it aside, then run setup again."
+}
+
 # Same problem one level up: \$2 is only safe if it still resolves to \$1 or
 # somewhere under it after every symlink in the path has been followed.
 inside() {
@@ -182,7 +198,7 @@ install_bodies() {
   managed_dir "$root" "$root/.oss-skills"
   reset_managed "$root/.oss-skills"
   for name in $(skill_names); do
-    no_symlink "$root/.oss-skills/$name.md"
+    writable_file "$root/.oss-skills/$name.md"
     skill_body "$name" > "$root/.oss-skills/$name.md"
     record_managed "$root/.oss-skills/$name.md"
   done
@@ -231,7 +247,7 @@ write_router() {
 check_router() {
   local file="$1" tokens_b tokens_e begins ends
   check_dir "$ROOT" "$(dirname "$file")"
-  no_symlink "$file"
+  writable_file "$file"
   [ -f "$file" ] || return 0
   grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file" || return 0
 
@@ -251,12 +267,19 @@ check_router() {
        changed. Tidy the markers by hand, then run setup again."
   fi
 
-  # BEGIN has to come first, which the replacement relies on. Position is line
-  # and column together, so the two sharing a line still compares correctly.
+  # BEGIN has to come first, which the replacement relies on. Walking the file in
+  # order settles that without needing to encode a position as a number.
   awk -v bre="$BEGIN_RE" -v ere="$END_RE" '
-    { if (!b && match($0, bre)) b = NR * 1000000 + RSTART
-      if (!e && match($0, ere)) e = NR * 1000000 + RSTART }
-    END { exit (b < e) ? 0 : 1 }
+    {
+      line = $0
+      if (!seen_begin) {
+        if (match(line, bre)) { seen_begin = 1; line = substr(line, RSTART + RLENGTH) }
+        else if (match(line, ere)) { bad = 1; exit }
+        else next
+      }
+      if (!seen_end && match(line, ere)) seen_end = 1
+    }
+    END { exit (seen_begin && seen_end && !bad) ? 0 : 1 }
   ' "$file" ||
     die "$file has its OSS-SKILLS:END marker before its BEGIN. Nothing was changed."
 }
@@ -339,7 +362,7 @@ install_split() {
   managed_dir "$ROOT" "$dir"
   reset_managed "$dir"
   for name in $(skill_names); do
-    no_symlink "$dir/$name.$ext"
+    writable_file "$dir/$name.$ext"
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
     record_managed "$dir/$name.$ext"
   done
@@ -349,9 +372,11 @@ install_split() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --target) TARGET="${2:-}"; shift 2 ;;
+    --target) [ $# -ge 2 ] || die "--target needs a value. Run ./setup --help."
+              TARGET="$2"; shift 2 ;;
     --target=*) TARGET="${1#*=}"; shift ;;
-    --dest) DEST="${2:-}"; shift 2 ;;
+    --dest) [ $# -ge 2 ] || die "--dest needs a value. Run ./setup --help."
+            DEST="$2"; shift 2 ;;
     --dest=*) DEST="${1#*=}"; shift ;;
     --local) LOCAL_MODE=true; shift ;;
     --list)
@@ -411,7 +436,7 @@ case "$TARGET" in
       managed_dir "$ROOT" "$DIR"
       for name in $(skill_names); do
         managed_dir "$ROOT" "$DIR/$name"
-        no_symlink "$DIR/$name/SKILL.md"
+        writable_file "$DIR/$name/SKILL.md"
         cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
       done
     else

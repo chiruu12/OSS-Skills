@@ -59,6 +59,10 @@ jobs:
               echo "::error::$t installed $got skill files, expected $count"
               fail=1
             fi
+            # a count alone would accept fifteen empty files
+            empty=$(find "$d" \( -name 'oss-*.md' -o -name 'oss-*.mdc' \) -size -100c | wc -l | tr -d ' ')
+            [ "$empty" -eq 0 ] || {
+              echo "::error::$t installed $empty skill files that are all but empty"; fail=1; }
 
             # Re-running must not duplicate or fail.
             ./setup --target "$t" --dest "$d" >/dev/null || {
@@ -119,7 +123,7 @@ jobs:
             # Re-running must update the block in place, not stack copies.
             ./setup --target "$t" --dest "$d" >/dev/null
             ./setup --target "$t" --dest "$d" >/dev/null
-            blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$f")
+            blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$f" || true)
             [ "$blocks" -eq 1 ] || {
               echo "::error::$t left $blocks managed blocks in $f after 3 runs"; fail=1; }
             [ "$(grep -c 'My Project' "$d/$f")" -eq 1 ] || {
@@ -357,7 +361,9 @@ jobs:
             echo "::error::cleanup deleted a managed file after the user edited it"; fail=1; }
           exit $fail
 
-      - name: The router update leaves prepared scratch paths alone
+      # setup now names its scratch file with mktemp, so the old fixed name is
+      # no longer touched. These cases keep it that way.
+      - name: The old fixed scratch path is neither used nor disturbed
         run: |
           fail=0
 
@@ -385,6 +391,50 @@ jobs:
             echo "::error::the router did not update"; fail=1; }
           [ -z "$(find "$d/proj" -maxdepth 1 -name '.oss-router.*')" ] || {
             echo "::error::a scratch file was left behind"; fail=1; }
+          exit $fail
+
+      - name: A directory where a skill file goes is refused
+        run: |
+          fail=0
+
+          # cp copies INTO a directory under the source's own name, so a planted
+          # directory with a SKILL.md symlink inside would write straight through
+          # it. The path itself is not a symlink, so checking for one misses this.
+          for pair in "cursor:.cursor/rules/oss-evaluate-repo.mdc" \
+                      "cline:.clinerules/oss-evaluate-repo.md" \
+                      "windsurf:.windsurf/rules/oss-evaluate-repo.md" \
+                      "kiro:.kiro/skills/oss-evaluate-repo.md"; do
+            t="${pair%%:*}"; rel="${pair#*:}"
+            d=$(mktemp -d); mkdir -p "$d/proj/$rel" "$d/out"
+            echo "do not touch" > "$d/out/victim"
+            ln -s "$d/out/victim" "$d/proj/$rel/SKILL.md"
+
+            ./setup --target "$t" --dest "$d/proj" >/dev/null 2>&1 && {
+              echo "::error::$t accepted a directory at a skill path"; fail=1; }
+            [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+              echo "::error::$t wrote through a directory at a skill path"; fail=1; }
+          done
+
+          # same shape for claude --local, whose skill files sit one level deeper
+          d=$(mktemp -d); mkdir -p "$d/proj/.claude/skills/oss-contribute/SKILL.md" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ./setup --target claude --local --dest "$d/proj" >/dev/null 2>&1 && {
+            echo "::error::claude --local accepted a directory at a skill path"; fail=1; }
+          [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+            echo "::error::claude --local wrote through a directory at a skill path"; fail=1; }
+          exit $fail
+
+      - name: An option given without its value fails with a usage error
+        run: |
+          fail=0
+          for opt in --target --dest; do
+            out=$(./setup "$opt" 2>&1) && {
+              echo "::error::$opt with no value exited 0"; fail=1; }
+            case "$out" in
+              *"needs a value"*) ;;
+              *) echo "::error::$opt with no value did not explain itself: $out"; fail=1 ;;
+            esac
+          done
           exit $fail
 
       - name: A destination you named yourself may be a symlink
