@@ -125,13 +125,14 @@ managed_dir() {
 
 # Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
 # starts a fresh manifest. Entries are plain filenames by construction; anything
-# with a path separator is ignored rather than followed out of the directory.
+# else is ignored rather than followed out of the directory. The read keeps a
+# final entry that was written without a trailing newline.
 reset_managed() {
   local dir="$1" old
   no_symlink "$dir/.oss-skills-manifest"
   if [ -f "$dir/.oss-skills-manifest" ]; then
-    while read -r old; do
-      case "$old" in ""|*/*) continue ;; esac
+    while read -r old || [ -n "$old" ]; do
+      case "$old" in ""|.|..|*/*) continue ;; esac
       rm -f "$dir/$old"
     done < "$dir/.oss-skills-manifest"
   fi

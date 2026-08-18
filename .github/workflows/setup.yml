@@ -194,6 +194,17 @@ jobs:
             echo "::error::cleanup kept a stale managed workflow"; fail=1; }
           exit $fail
 
+      - name: A manifest entry written without a trailing newline still counts
+        run: |
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          touch "$d/.cursor/rules/oss-stale.mdc"
+          printf 'oss-stale.mdc' >> "$d/.cursor/rules/.oss-skills-manifest"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/oss-stale.mdc" ] && {
+            echo "::error::a manifest entry with no trailing newline was skipped"; exit 1; }
+          exit 0
+
       - name: A managed block sharing a line with instructions still updates
         run: |
           fail=0
