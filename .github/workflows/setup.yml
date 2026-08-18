@@ -229,6 +229,14 @@ jobs:
           after=$(find "$d/.oss-skills" -type f | sort | xargs shasum -a 256 | shasum -a 256)
           [ "$before" = "$after" ] || {
             echo "::error::a rejected router still rewrote the installed workflows"; fail=1; }
+
+          # a symlinked router parent is caught before the workflows are touched
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          ln -s "$d/out" "$d/proj/.github"
+          ./setup --target copilot --dest "$d/proj" >/dev/null 2>&1 && {
+            echo "::error::copilot accepted a symlinked .github"; fail=1; }
+          [ -d "$d/proj/.oss-skills" ] && {
+            echo "::error::workflows were installed despite a symlinked router parent"; fail=1; }
           exit $fail
 
       - name: A manifest entry written without a trailing newline still counts

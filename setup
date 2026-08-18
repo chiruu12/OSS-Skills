@@ -126,17 +126,23 @@ inside() {
        Nothing was changed."
 }
 
-# Creates a directory setup is about to write into, once it is clear no symlink
-# can move those writes out of \$1. The containment check runs against the
-# deepest part of the path that already exists, so a symlinked parent is refused
-# before mkdir has created anything on the far side of it.
-managed_dir() {
+# Says whether setup can write into \$2 without a symlink moving those writes out
+# of \$1, and dies with an explanation if not. The containment check runs against
+# the deepest part of the path that already exists, so a symlinked parent is
+# refused before anything has been created on the far side of it. Separate from
+# managed_dir so a target can ask before it starts writing.
+check_dir() {
   local root="$1" dir="$2" existing
   no_symlink "$dir"
   existing="$dir"
   while [ ! -d "$existing" ]; do existing="$(dirname "$existing")"; done
   inside "$root" "$existing"
-  mkdir -p "$dir"
+}
+
+# Creates a directory setup is about to write into, once that check has passed.
+managed_dir() {
+  check_dir "$1" "$2"
+  mkdir -p "$2"
 }
 
 # Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
@@ -224,6 +230,7 @@ write_router() {
 # installs anything, and a refusal never leaves half an install behind.
 check_router() {
   local file="$1" tokens_b tokens_e begins ends
+  check_dir "$ROOT" "$(dirname "$file")"
   no_symlink "$file"
   [ -f "$file" ] || return 0
   grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file" || return 0
