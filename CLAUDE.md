@@ -68,8 +68,8 @@ Skills reference each other at handoff points:
 - `oss-find-real-issues` → `oss-find-issue` or `oss-contribute`
 
 **Contribution types (alternatives to oss-contribute):**
-- `oss-write-tests` — test contributions as standalone entry point
-- `oss-write-docs` — documentation contributions
+- `oss-write-tests` - test contributions as standalone entry point
+- `oss-write-docs` - documentation contributions
 
 **Growth track:**
 - `oss-second-contribution` → `oss-review-prs` → `oss-find-issue` (next contribution)
@@ -82,14 +82,17 @@ When editing a skill, check that cross-references remain valid.
 
 ## IDE compatibility
 
-Skills are Claude Code native (they use the Agent tool, Skill tool, and Explore agents). But since all skills are plain markdown, they're portable:
+Skills are written against Claude Code (Agent tool, Skill tool, Explore agents), but they are plain markdown, so `setup` installs them anywhere:
 
-- **Cursor**: Copy SKILL.md content into `.cursor/rules/*.mdc`
-- **VS Code Copilot**: Copy into `.github/copilot-instructions.md`
-- **Windsurf**: Copy into `.windsurfrules`
-- **Codex / Antigravity**: `AGENTS.md` in repo root provides basic discovery
+```
+./setup --target claude|agents|cursor|cline|copilot|windsurf|zed|gemini|kiro
+```
 
-v2 will add a setup flag (`./setup --cursor`, `./setup --copilot`, etc.) that installs in the right format automatically. For now, Claude Code is the primary target.
+Targets that use one instruction file (`agents`, `gemini`, `copilot`, `zed`) write each workflow to `.oss-skills/<skill>.md` and generate a small router that indexes them, because 15 concatenated skills is about 150KB. Targets with their own rules directory (`cursor`, `cline`, `windsurf`, `kiro`) get one file per skill and no router.
+
+`--target agents` writes `AGENTS.md`, the open format under the Agentic AI Foundation that roughly 25 tools read. Use it for anything without a dedicated target.
+
+`setup` discovers skills from `skills/*/SKILL.md` and reads each summary from the frontmatter. Do not hardcode the skill list anywhere. Adding a directory with a valid `SKILL.md` is all that is needed, and `.github/workflows/setup.yml` fails if frontmatter is missing or a target installs the wrong count.
 
 ## Conventions
 

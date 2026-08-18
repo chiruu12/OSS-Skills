@@ -1,6 +1,6 @@
 # OSS-Skills
 
-**15 Claude Code skills that walk you through your first open source contribution — and your tenth.** Install in 30 seconds. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
+**15 skills that walk you through your first open source contribution, and your tenth.** Install in 30 seconds on Claude Code, Codex, Cursor, Cline, Copilot, Windsurf, Zed, Gemini CLI or Kiro. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
 
 Built by a GSoC mentor who got tired of watching contributors make the same avoidable mistakes - picking issues nobody maintains, skipping CONTRIBUTING.md, submitting PRs that ignore the repo's conventions, and not being able to explain their own code during review.
 
@@ -40,20 +40,29 @@ Skill:   It's a one-line attestation that you have the right to submit this code
 
 ## Install - 30 seconds
 
-**Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/), [`gh` CLI](https://cli.github.com/) (authenticated)
+**Requirements:** [Git](https://git-scm.com/), [`gh` CLI](https://cli.github.com/) (authenticated), and an AI coding tool.
 
 ```bash
-mkdir -p ~/.claude/skills
-git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills
-cd ~/.claude/skills/oss-skills
+git clone https://github.com/chiruu12/OSS-Skills.git
+cd OSS-Skills
 ./setup
 ```
 
+That installs for Claude Code. For anything else, name it:
+
+```bash
+./setup --target cursor      # or cline, copilot, windsurf, zed, gemini, kiro
+./setup --target agents      # AGENTS.md, read by Codex, Aider, Goose, Amp and ~20 more
+./setup --list               # every target
+```
+
+Non-Claude targets install into the current directory, so run them from your
+project, or pass `--dest /path/to/project`. For a project-local Claude install,
+use `./setup --local`.
+
 Or paste this into Claude Code and it handles everything:
 
-> Install OSS-Skills: run `git clone https://github.com/chiruu12/OSS-Skills.git ~/.claude/skills/oss-skills && cd ~/.claude/skills/oss-skills && ./setup`
-
-For project-local install: `./setup --local`
+> Install OSS-Skills: run `git clone https://github.com/chiruu12/OSS-Skills.git && cd OSS-Skills && ./setup`
 
 ## The skills
 
@@ -164,18 +173,24 @@ All skills that create PRs, issues, or comments enforce:
 
 ## Platform support
 
-| Platform | Status | Install |
-|----------|--------|---------|
-| **Claude Code** | Full | `./setup` - slash commands, auto-discovery, Explore agents |
-| **Cursor** | Supported | Copy to `.cursor/rules/*.mdc` |
-| **GitHub Copilot** (VS Code / JetBrains) | Supported | Copy to `.github/copilot-instructions.md` |
-| **Windsurf** | Supported | Copy to `.windsurfrules` or `.windsurf/rules/` |
-| **Gemini CLI** | Supported | Copy to `GEMINI.md` |
-| **Codex CLI** | Supported | Reads `AGENTS.md` (already included) |
-| **Kiro** | Supported | Copy to `.kiro/skills/` |
-| **Any AI tool** | Manual | Paste SKILL.md content as context |
+| Platform | Install |
+|----------|---------|
+| **Claude Code** | `./setup` - slash commands, auto-discovery, Explore agents |
+| **Cursor** | `./setup --target cursor` |
+| **Cline** | `./setup --target cline` |
+| **GitHub Copilot** (VS Code / JetBrains) | `./setup --target copilot` |
+| **Windsurf** | `./setup --target windsurf` |
+| **Zed** | `./setup --target zed` |
+| **Gemini CLI** | `./setup --target gemini` |
+| **Kiro** | `./setup --target kiro` |
+| **Codex, Aider, Goose, Amp, Jules, Junie, Devin, RooCode, Warp** | `./setup --target agents` |
+| **Anything else** | `./setup --target agents`, then paste if that fails |
 
-All skills are plain markdown - the thinking gates and workflows work everywhere. Claude Code adds convenience (auto-routing, parallel search) but the core process is portable.
+`--target agents` writes `AGENTS.md`, the open format stewarded by the Agentic AI
+Foundation under the Linux Foundation. Roughly 25 tools read it, so it is the
+right default for anything without a row of its own.
+
+All skills are plain markdown, so the thinking gates and workflows work everywhere. Claude Code adds convenience (auto-routing, parallel search) but the core process is portable.
 
 **Full setup instructions for each platform:** [docs/PLATFORMS.md](docs/PLATFORMS.md)
 

@@ -1,0 +1,534 @@
+name: setup
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell syntax
+        run: bash -n setup
+
+      - name: Targets are listed
+        run: |
+          targets=$(./setup --list)
+          echo "$targets"
+          for t in claude agents cursor cline copilot windsurf zed gemini kiro; do
+            case " $targets " in
+              *" $t "*) ;;
+              *) echo "::error::--list is missing $t"; exit 1 ;;
+            esac
+          done
+
+      - name: Every skill has the frontmatter setup reads
+        run: |
+          fail=0
+          for d in skills/oss-*/; do
+            f="$d/SKILL.md"
+            [ -f "$f" ] || { echo "::error::$d has no SKILL.md"; fail=1; continue; }
+            head -1 "$f" | grep -q '^---$' || { echo "::error::$f does not open with frontmatter"; fail=1; }
+            grep -q '^name:' "$f" || { echo "::error::$f has no name:"; fail=1; }
+            grep -q '^description:' "$f" || { echo "::error::$f has no description:"; fail=1; }
+          done
+          exit $fail
+
+      - name: Install every target
+        run: |
+          count=$(ls -d skills/oss-*/ | wc -l | tr -d ' ')
+          echo "expecting $count skills"
+          fail=0
+
+          for t in agents cursor cline copilot windsurf zed gemini kiro; do
+            d=$(mktemp -d)
+            ./setup --target "$t" --dest "$d" >/dev/null || {
+              echo "::error::$t failed to install"; fail=1; continue; }
+
+            got=$(find "$d" \( -name 'oss-*.md' -o -name 'oss-*.mdc' \) | wc -l | tr -d ' ')
+            if [ "$got" -ne "$count" ]; then
+              echo "::error::$t installed $got skill files, expected $count"
+              fail=1
+            fi
+            # a count alone would accept fifteen empty files
+            empty=$(find "$d" \( -name 'oss-*.md' -o -name 'oss-*.mdc' \) -size -100c | wc -l | tr -d ' ')
+            [ "$empty" -eq 0 ] || {
+              echo "::error::$t installed $empty skill files that are all but empty"; fail=1; }
+
+            # Re-running must not duplicate or fail.
+            ./setup --target "$t" --dest "$d" >/dev/null || {
+              echo "::error::$t is not safe to re-run"; fail=1; continue; }
+            again=$(find "$d" \( -name 'oss-*.md' -o -name 'oss-*.mdc' \) | wc -l | tr -d ' ')
+            if [ "$again" -ne "$count" ]; then
+              echo "::error::$t re-run changed file count to $again"
+              fail=1
+            fi
+            # a router target must still hold exactly one managed block, which the
+            # skill file count above cannot see
+            for r in AGENTS.md GEMINI.md .rules .github/copilot-instructions.md; do
+              [ -f "$d/$r" ] || continue
+              blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$r" || true)
+              [ "$blocks" -eq 1 ] || {
+                echo "::error::$t left $blocks managed blocks in $r after a re-run"; fail=1; }
+            done
+
+            echo "$t ok"
+          done
+
+          exit $fail
+
+      - name: Router files point at skills that exist
+        run: |
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          fail=0
+          for ref in $(grep -o '`\.oss-skills/[^`]*\.md`' "$d/AGENTS.md" | tr -d '`'); do
+            [ -f "$d/$ref" ] || { echo "::error::AGENTS.md points at missing $ref"; fail=1; }
+          done
+          # Each routed line must carry a summary, which is the only thing that
+          # exercises skill_summary's frontmatter parsing.
+          while IFS= read -r line; do
+            case "$line" in
+              *'`'*'` - '?*) ;;
+              *) echo "::error::router line has no summary: $line"; fail=1 ;;
+            esac
+          done < <(grep '^- `\.oss-skills/' "$d/AGENTS.md")
+
+          # Every installed skill must be routed to, not just exist on disk.
+          for f in "$d"/.oss-skills/*.md; do
+            name=$(basename "$f")
+            grep -q "$name" "$d/AGENTS.md" || {
+              echo "::error::$name is installed but absent from AGENTS.md"; fail=1; }
+          done
+          exit $fail
+
+      - name: Embedded bodies have no leftover frontmatter
+        run: |
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          fail=0
+          for f in "$d"/.oss-skills/*.md; do
+            if head -1 "$f" | grep -q '^---$'; then
+              echo "::error::$(basename "$f") still starts with frontmatter"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Existing project instructions survive installation
+        run: |
+          fail=0
+          for pair in "agents:AGENTS.md" "gemini:GEMINI.md" "zed:.rules" "copilot:.github/copilot-instructions.md"; do
+            t="${pair%%:*}"; f="${pair#*:}"
+            d=$(mktemp -d)
+            mkdir -p "$d/$(dirname "$f")"
+            printf '# My Project\n\nNever touch vendor/.\n' > "$d/$f"
+
+            ./setup --target "$t" --dest "$d" >/dev/null
+            grep -q 'Never touch vendor/' "$d/$f" || {
+              echo "::error::$t destroyed an existing $f"; fail=1; continue; }
+
+            # Re-running must update the block in place, not stack copies.
+            ./setup --target "$t" --dest "$d" >/dev/null
+            ./setup --target "$t" --dest "$d" >/dev/null
+            blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$f" || true)
+            [ "$blocks" -eq 1 ] || {
+              echo "::error::$t left $blocks managed blocks in $f after 3 runs"; fail=1; }
+            [ "$(grep -c 'My Project' "$d/$f")" -eq 1 ] || {
+              echo "::error::$t duplicated user content in $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Renamed rules do not linger, user rules are kept
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          mkdir -p "$d/.cursor/rules"
+          echo mine > "$d/.cursor/rules/my-own.mdc"
+          echo mine > "$d/.cursor/rules/oss-my-own.mdc"
+          ./setup --target cursor --dest "$d" >/dev/null
+
+          # A skill installed by an earlier version, then renamed away.
+          echo stale > "$d/.cursor/rules/oss-removed.mdc"
+          printf '%s  oss-removed.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-removed.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
+          ./setup --target cursor --dest "$d" >/dev/null
+
+          [ -f "$d/.cursor/rules/my-own.mdc" ] || {
+            echo "::error::cursor deleted a rule the user wrote"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-my-own.mdc" ] || {
+            echo "::error::cursor deleted a user rule just for being named oss-*"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-removed.mdc" ] && {
+            echo "::error::cursor kept a stale managed rule"; fail=1; }
+
+          exit $fail
+
+      - name: Malformed marker blocks are never rewritten
+        run: |
+          fail=0
+          # unmatched BEGIN / stray END / a good block followed by a stray BEGIN
+          # / two BEGINs sharing one line / a marker retyped without its comment
+          for case in "<!-- OSS-SKILLS:BEGIN - x -->" \
+                      "<!-- OSS-SKILLS:END -->" \
+                      "<!-- OSS-SKILLS:BEGIN - x -->|<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->" \
+                      "<!-- OSS-SKILLS:BEGIN - x --> <!-- OSS-SKILLS:BEGIN - x --> <!-- OSS-SKILLS:END -->" \
+                      "OSS-SKILLS:BEGIN|<!-- OSS-SKILLS:END -->" \
+                      "<!-- OSS-SKILLS:BEGIN - x -->|OSS-SKILLS:END"; do
+            d=$(mktemp -d)
+            echo header > "$d/AGENTS.md"
+            echo "$case" | tr '|' '\n' >> "$d/AGENTS.md"
+            echo 'tail instructions' >> "$d/AGENTS.md"
+
+            if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
+              echo "::error::setup rewrote a file with markers: $case"
+              fail=1
+            fi
+            grep -q 'tail instructions' "$d/AGENTS.md" || {
+              echo "::error::setup destroyed instructions for case: $case"; fail=1; }
+          done
+          exit $fail
+
+      - name: Managed cleanup keeps user workflows and stays in its directory
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          echo mine > "$d/.oss-skills/oss-my-own.md"
+          echo secret > "$d/keep-me"
+          echo stale > "$d/.oss-skills/oss-removed.md"
+          # a real managed file, and an escape attempt carrying a valid checksum
+          printf '%s  oss-removed.md\n%s  ../keep-me\n' \
+            "$(shasum -a 256 "$d/.oss-skills/oss-removed.md" | cut -d' ' -f1)" \
+            "$(shasum -a 256 "$d/keep-me" | cut -d' ' -f1)" \
+            >> "$d/.oss-skills/.oss-skills-manifest"
+          ./setup --target agents --dest "$d" >/dev/null
+
+          [ -f "$d/keep-me" ] || {
+            echo "::error::manifest cleanup escaped the rules directory"; fail=1; }
+          [ -f "$d/.oss-skills/oss-my-own.md" ] || {
+            echo "::error::cleanup deleted a workflow the user wrote"; fail=1; }
+          [ -f "$d/.oss-skills/oss-removed.md" ] && {
+            echo "::error::cleanup kept a stale managed workflow"; fail=1; }
+          exit $fail
+
+      - name: A rejected router installs nothing at all
+        run: |
+          fail=0
+          # a good block followed by a stray BEGIN, and an END before its BEGIN
+          for case in "<!-- OSS-SKILLS:BEGIN - x -->|<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->" \
+                      "<!-- OSS-SKILLS:END -->|<!-- OSS-SKILLS:BEGIN - x -->"; do
+            d=$(mktemp -d)
+            echo header > "$d/AGENTS.md"
+            echo "$case" | tr '|' '\n' >> "$d/AGENTS.md"
+
+            if ./setup --target agents --dest "$d" >/dev/null 2>&1; then
+              echo "::error::setup accepted a router it cannot update: $case"
+              fail=1
+            fi
+            [ -d "$d/.oss-skills" ] && {
+              echo "::error::workflows were installed despite the router being rejected: $case"
+              fail=1; }
+          done
+
+          # and a rejection partway through an existing install changes nothing
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          before=$(find "$d/.oss-skills" -type f | sort | xargs shasum -a 256 | shasum -a 256)
+          printf '\n<!-- OSS-SKILLS:BEGIN - x -->\n' >> "$d/AGENTS.md"
+          ./setup --target agents --dest "$d" >/dev/null 2>&1 && {
+            echo "::error::setup accepted a router with a second BEGIN"; fail=1; }
+          after=$(find "$d/.oss-skills" -type f | sort | xargs shasum -a 256 | shasum -a 256)
+          [ "$before" = "$after" ] || {
+            echo "::error::a rejected router still rewrote the installed workflows"; fail=1; }
+
+          # a symlinked router parent is caught before the workflows are touched
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          ln -s "$d/out" "$d/proj/.github"
+          ./setup --target copilot --dest "$d/proj" >/dev/null 2>&1 && {
+            echo "::error::copilot accepted a symlinked .github"; fail=1; }
+          [ -d "$d/proj/.oss-skills" ] && {
+            echo "::error::workflows were installed despite a symlinked router parent"; fail=1; }
+          exit $fail
+
+      - name: A manifest entry written without a trailing newline still counts
+        run: |
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          echo stale > "$d/.cursor/rules/oss-stale.mdc"
+          printf '%s  oss-stale.mdc' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-stale.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/oss-stale.mdc" ] && {
+            echo "::error::a manifest entry with no trailing newline was skipped"; exit 1; }
+          exit 0
+
+      - name: A managed block sharing a line with instructions still updates
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          printf 'PREFIX <!-- OSS-SKILLS:BEGIN - x --> stale <!-- OSS-SKILLS:END --> SUFFIX\ntail instructions\n' > "$d/AGENTS.md"
+
+          ./setup --target agents --dest "$d" >/dev/null || {
+            echo "::error::setup refused a well formed block that shared a line"; exit 1; }
+
+          grep -q 'PREFIX' "$d/AGENTS.md" || {
+            echo "::error::text before the BEGIN marker was dropped"; fail=1; }
+          grep -q 'SUFFIX' "$d/AGENTS.md" || {
+            echo "::error::text after the END marker was dropped"; fail=1; }
+          grep -q 'tail instructions' "$d/AGENTS.md" || {
+            echo "::error::instructions after the block were dropped"; fail=1; }
+          grep -q 'stale' "$d/AGENTS.md" && {
+            echo "::error::the old block body survived the update"; fail=1; }
+          grep -q 'oss-find-issue' "$d/AGENTS.md" || {
+            echo "::error::the router was never written"; fail=1; }
+          [ "$(grep -c 'OSS-SKILLS:BEGIN' "$d/AGENTS.md")" -eq 1 ] || {
+            echo "::error::update left more than one managed block"; fail=1; }
+          exit $fail
+
+      - name: Symlinks are refused, never written through
+        run: |
+          fail=0
+
+          check() {
+            # $1 names the case, $2 is the file that must come back untouched.
+            if ./setup --target "$3" --dest "$4" >/dev/null 2>&1; then
+              echo "::error::setup followed a symlink: $1"; fail=1
+            fi
+            [ "$(cat "$2")" = "do not touch" ] || {
+              echo "::error::setup wrote through a symlink: $1"; fail=1; }
+          }
+
+          # the manifest itself
+          d=$(mktemp -d); mkdir -p "$d/proj/.oss-skills" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.oss-skills/.oss-skills-manifest"
+          check "manifest" "$d/out/victim" agents "$d/proj"
+
+          # the router file
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/AGENTS.md"
+          check "router file" "$d/out/victim" agents "$d/proj"
+
+          # a file inside the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj/.cursor/rules" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.cursor/rules/oss-contribute.mdc"
+          check "managed file" "$d/out/victim" cursor "$d/proj"
+
+          # the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out" "$d/proj/.oss-skills"
+          check "managed directory" "$d/out/victim" agents "$d/proj"
+          [ "$(ls -A "$d/out" | tr -d '[:space:]')" = "victim" ] || {
+            echo "::error::setup wrote into a symlinked managed directory"; fail=1; }
+
+          # a symlinked parent of the managed directory
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out" "$d/proj/.cursor"
+          check "symlinked parent" "$d/out/victim" cursor "$d/proj"
+          [ "$(ls -A "$d/out" | tr -d '[:space:]')" = "victim" ] || {
+            echo "::error::setup created directories through a symlinked parent"; fail=1; }
+
+          exit $fail
+
+      - name: A manifest cannot name a file setup did not write
+        run: |
+          fail=0
+          d=$(mktemp -d); mkdir -p "$d/.cursor/rules"
+
+          # a manifest that came with the repo, naming files it does not own
+          echo "my own rule"  > "$d/.cursor/rules/my-notes.mdc"
+          echo "looks managed" > "$d/.cursor/rules/oss-decoy.mdc"
+          # a bare name, and a name carrying a checksum that does not match
+          printf 'my-notes.mdc\n%s  oss-decoy.mdc\n' \
+            "$(printf 'wrong' | shasum -a 256 | cut -d' ' -f1)" \
+            > "$d/.cursor/rules/.oss-skills-manifest"
+
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/my-notes.mdc" ] || {
+            echo "::error::a supplied manifest deleted a file setup never wrote"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-decoy.mdc" ] || {
+            echo "::error::a supplied manifest deleted an oss-named file setup never wrote"; fail=1; }
+
+          # a correct checksum is not authorship either: a repo can ship a file
+          # and the matching hash. Names outside the oss-* namespace stay put.
+          d=$(mktemp -d); mkdir -p "$d/.cursor/rules"
+          echo "my project rules" > "$d/.cursor/rules/keep-me.mdc"
+          printf '%s  keep-me.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/keep-me.mdc" | cut -d' ' -f1)" \
+            > "$d/.cursor/rules/.oss-skills-manifest"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/keep-me.mdc" ] || {
+            echo "::error::a manifest with a correct hash deleted a file setup never wrote"; fail=1; }
+
+          # a stale managed file the user has since edited stops being setup's
+          # to delete, because it is no longer what setup wrote
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          echo stale > "$d/.cursor/rules/oss-gone.mdc"
+          printf '%s  oss-gone.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-gone.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
+          echo "my edit" >> "$d/.cursor/rules/oss-gone.mdc"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/oss-gone.mdc" ] || {
+            echo "::error::cleanup deleted a managed file after the user edited it"; fail=1; }
+          exit $fail
+
+      # setup now names its scratch file with mktemp, so the old fixed name is
+      # no longer touched. These cases keep it that way.
+      - name: The old fixed scratch path is neither used nor disturbed
+        run: |
+          fail=0
+
+          # a regular file of the user's at the name the old code used
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          echo "mine" > "$d/AGENTS.md.oss-tmp"
+          ./setup --target agents --dest "$d" >/dev/null || {
+            echo "::error::a file at the old scratch path blocked the update"; fail=1; }
+          [ -f "$d/AGENTS.md.oss-tmp" ] || {
+            echo "::error::the router update deleted a file it did not create"; fail=1; }
+
+          # the same name as a symlink pointing out of the project
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ./setup --target agents --dest "$d/proj" >/dev/null
+          ln -s "$d/out/victim" "$d/proj/AGENTS.md.oss-tmp"
+          ./setup --target agents --dest "$d/proj" >/dev/null || {
+            echo "::error::a symlink at the old scratch path blocked the update"; fail=1; }
+          [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+            echo "::error::the router update wrote through a prepared scratch path"; fail=1; }
+          [ -L "$d/proj/AGENTS.md" ] && {
+            echo "::error::the router was replaced by a symlink"; fail=1; }
+          grep -q 'oss-find-issue' "$d/proj/AGENTS.md" || {
+            echo "::error::the router did not update"; fail=1; }
+          [ -z "$(find "$d/proj" -maxdepth 1 -name '.oss-router.*')" ] || {
+            echo "::error::a scratch file was left behind"; fail=1; }
+          exit $fail
+
+      - name: A directory where a skill file goes is refused
+        run: |
+          fail=0
+
+          # cp copies INTO a directory under the source's own name, so a planted
+          # directory with a SKILL.md symlink inside would write straight through
+          # it. The path itself is not a symlink, so checking for one misses this.
+          for pair in "cursor:.cursor/rules/oss-evaluate-repo.mdc" \
+                      "cline:.clinerules/oss-evaluate-repo.md" \
+                      "windsurf:.windsurf/rules/oss-evaluate-repo.md" \
+                      "kiro:.kiro/skills/oss-evaluate-repo.md"; do
+            t="${pair%%:*}"; rel="${pair#*:}"
+            d=$(mktemp -d); mkdir -p "$d/proj/$rel" "$d/out"
+            echo "do not touch" > "$d/out/victim"
+            ln -s "$d/out/victim" "$d/proj/$rel/SKILL.md"
+
+            ./setup --target "$t" --dest "$d/proj" >/dev/null 2>&1 && {
+              echo "::error::$t accepted a directory at a skill path"; fail=1; }
+            [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+              echo "::error::$t wrote through a directory at a skill path"; fail=1; }
+          done
+
+          # same shape for claude --local, whose skill files sit one level deeper.
+          # the nested symlink is what gives the victim check its teeth: without
+          # it the assertion would hold however setup behaved.
+          d=$(mktemp -d); mkdir -p "$d/proj/.claude/skills/oss-contribute/SKILL.md" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.claude/skills/oss-contribute/SKILL.md/SKILL.md"
+          ./setup --target claude --local --dest "$d/proj" >/dev/null 2>&1 && {
+            echo "::error::claude --local accepted a directory at a skill path"; fail=1; }
+          [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+            echo "::error::claude --local wrote through a directory at a skill path"; fail=1; }
+          exit $fail
+
+      - name: An option given without its value fails with a usage error
+        run: |
+          fail=0
+          for opt in --target --dest; do
+            out=$(./setup "$opt" 2>&1) && {
+              echo "::error::$opt with no value exited 0"; fail=1; }
+            case "$out" in
+              *"needs a value"*) ;;
+              *) echo "::error::$opt with no value did not explain itself: $out"; fail=1 ;;
+            esac
+          done
+          exit $fail
+
+      - name: A destination you named yourself may be a symlink
+        run: |
+          fail=0
+          d=$(mktemp -d)
+          mkdir -p "$d/project"
+          ln -s "$d/project" "$d/link"
+          for t in agents cursor copilot; do
+            ./setup --target "$t" --dest "$d/link" >/dev/null || {
+              echo "::error::$t refused a symlinked destination"; fail=1; }
+          done
+          ./setup --target claude --local --dest "$d/link" >/dev/null || {
+            echo "::error::claude --local refused a symlinked destination"; fail=1; }
+          [ -f "$d/project/AGENTS.md" ] || {
+            echo "::error::install did not land in the symlink's target"; fail=1; }
+          exit $fail
+
+      - name: Claude target installs to the project
+        run: |
+          count=$(ls -d skills/oss-*/ | wc -l | tr -d ' ')
+          d=$(mktemp -d)
+          ./setup --target claude --local --dest "$d" >/dev/null
+          got=$(find "$d/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')
+          [ "$got" -eq "$count" ] || {
+            echo "::error::claude --local installed $got of $count"; exit 1; }
+          empty=$(find "$d/.claude/skills" -name SKILL.md -size -100c | wc -l | tr -d ' ')
+          [ "$empty" -eq 0 ] || {
+            echo "::error::claude --local installed $empty all but empty skill files"; exit 1; }
+          ./setup --target claude --local --dest "$d" >/dev/null || {
+            echo "::error::claude --local is not safe to re-run"; exit 1; }
+          again=$(find "$d/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')
+          [ "$again" -eq "$count" ] || {
+            echo "::error::claude --local re-run changed the count to $again"; exit 1; }
+
+      - name: An unusable skills tree is reported, not exited silently
+        run: |
+          fail=0
+          # a work in progress directory with no SKILL.md must not stop the rest
+          d=$(mktemp -d); mkdir -p "$d/repo/skills"
+          cp -R skills/oss-contribute "$d/repo/skills/"
+          mkdir -p "$d/repo/skills/oss-zz-wip"
+          cp setup "$d/repo/setup"; chmod +x "$d/repo/setup"
+          dest=$(mktemp -d)
+          (cd "$d/repo" && ./setup --target agents --dest "$dest" >/dev/null) || {
+            echo "::error::a skills directory without SKILL.md aborted the install"; fail=1; }
+          [ -f "$dest/.oss-skills/oss-contribute.md" ] || {
+            echo "::error::the valid skill was not installed"; fail=1; }
+
+          # and an empty tree must say so rather than exit silently
+          d=$(mktemp -d); mkdir -p "$d/repo/skills"
+          cp setup "$d/repo/setup"; chmod +x "$d/repo/setup"
+          out=$(cd "$d/repo" && ./setup --target agents --dest "$(mktemp -d)" 2>&1) && {
+            echo "::error::an empty skills tree exited 0"; fail=1; }
+          case "$out" in
+            *"No skills found"*) ;;
+            *) echo "::error::an empty skills tree gave no explanation: $out"; fail=1 ;;
+          esac
+          exit $fail
+
+      - name: Unknown target fails loudly
+        run: |
+          if ./setup --target nonsense --dest "$(mktemp -d)" >/dev/null 2>&1; then
+            echo "::error::an unknown target exited 0"
+            exit 1
+          fi

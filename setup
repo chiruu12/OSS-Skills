@@ -3,141 +3,529 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$SCRIPT_DIR/skills"
-LOCAL_MODE=false
+REPO_URL="https://github.com/chiruu12/OSS-Skills"
 
-# Parse args
-for arg in "$@"; do
-  case "$arg" in
-    --local) LOCAL_MODE=true ;;
-    --help|-h)
-      echo "Usage: ./setup [--local]"
-      echo ""
-      echo "  --local    Install skills relative to current project (.claude/skills/)"
-      echo "             instead of global (~/.claude/skills/)"
-      echo ""
-      echo "OSS-Skills: 15 Claude Code skills for open source contributors."
-      echo "https://github.com/chiruu12/OSS-Skills"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $arg"
-      echo "Run ./setup --help for usage."
-      exit 1
-      ;;
+TARGET=""
+LOCAL_MODE=false
+DEST=""
+
+# ---------------------------------------------------------------- helpers
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+skill_names() {
+  local d
+  for d in "$SKILLS_DIR"/oss-*/; do
+    [ -f "$d/SKILL.md" ] && basename "$d"
+  done
+  # The last iteration's test must not become this function's exit status: under
+  # pipefail that aborts the caller, and the count check below never gets to
+  # explain itself.
+  return 0
+}
+
+# First line of the description in a SKILL.md, written either inline after the
+# key or as a block scalar under it. The CI lint accepts both, so this must too.
+skill_summary() {
+  awk '
+    /^description:/ {
+      inline = $0
+      sub(/^description:[ \t]*/, "", inline)
+      if (inline != "" && inline !~ /^[|>][0-9+-]*$/) { print inline; exit }
+      indesc = 1; next
+    }
+    indesc && /^[a-zA-Z_-]+:/ { exit }
+    indesc && /^---/ { exit }
+    indesc && NF { sub(/^[ \t]+/, ""); print; exit }
+  ' "$SKILLS_DIR/$1/SKILL.md"
+}
+
+# Strip YAML frontmatter so the body can be embedded in a plain rules file.
+skill_body() {
+  awk 'NR==1 && /^---$/ { fm = 1; next } fm && /^---$/ { fm = 0; next } !fm' \
+    "$SKILLS_DIR/$1/SKILL.md"
+}
+
+usage() {
+  cat <<EOF
+OSS-Skills setup
+
+Usage: ./setup [--target <platform>] [--local] [--dest <path>]
+
+Targets:
+  claude      Claude Code           ~/.claude/skills (or .claude/skills with --local)
+  agents      AGENTS.md standard    AGENTS.md + .oss-skills/   [works with ~25 tools]
+  cursor      Cursor                .cursor/rules/
+  cline       Cline                 .clinerules/
+  copilot     GitHub Copilot        .github/copilot-instructions.md + .oss-skills/
+  windsurf    Windsurf              .windsurf/rules/
+  zed         Zed                   .rules + .oss-skills/
+  gemini      Gemini CLI            GEMINI.md + .oss-skills/
+  kiro        Kiro IDE              .kiro/skills/
+
+  With no --target, Claude Code is used.
+
+Options:
+  --local     For claude, install into the current project instead of \$HOME.
+  --dest      Install into an explicit directory instead of the current one.
+  --list      List targets and exit.
+  --help      This message.
+
+The 'agents' target writes the AGENTS.md format stewarded by the Agentic AI
+Foundation, which Codex, Cursor, Zed, Aider, Goose, Amp, Jules, Junie, Devin,
+RooCode, Gemini CLI, Copilot and others all read. Pick it if your tool is not
+listed above.
+
+$REPO_URL
+EOF
+}
+
+BEGIN_MARKER="<!-- OSS-SKILLS:BEGIN - managed by ./setup, edits here are overwritten -->"
+END_MARKER="<!-- OSS-SKILLS:END -->"
+
+# The marker as a pattern rather than a literal, so a block written by an older
+# version with different wording inside the comment is still recognised. [^>]*
+# cannot cross the comment's own closing -->, so a BEGIN never matches its way
+# into a later END on the same line.
+BEGIN_RE='<!--[^>]*OSS-SKILLS:BEGIN[^>]*-->'
+END_RE='<!--[^>]*OSS-SKILLS:END[^>]*-->'
+
+# Occurrences of a pattern in a file, not lines containing it, so two markers
+# sharing a line count as two. \$1 is grep's pattern flag, -F or -E.
+count_matches() {
+  { grep -o "$1" "$2" "$3" || true; } | wc -l | tr -d ' '
+}
+
+# Checksum of \$1, used to tell a file setup wrote from one that was already
+# there. shasum ships with macOS and most Linux images, sha256sum with the rest.
+file_hash() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | cut -d' ' -f1
+  else
+    sha256sum "$1" | cut -d' ' -f1
+  fi
+}
+
+# Permission bits of \$1 as octal. GNU stat first, then the BSD spelling macOS
+# ships. Empty if neither works, in which case the caller leaves the mode alone.
+file_mode() {
+  stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null || true
+}
+
+# setup never writes through a symlink. A project you cloned could otherwise
+# ship one at a path setup manages and redirect the write anywhere the user can
+# write, which is the one way an installer turns into a way to lose files.
+no_symlink() {
+  [ ! -L "$1" ] || die "$1 is a symlink.
+       setup does not write through symlinks, because the write would land
+       outside the directory you chose. Nothing was changed. Replace it with a
+       real file or directory, then run setup again."
+}
+
+# A path setup is about to write a FILE to must be a regular file or absent. A
+# directory there turns `cp` into a copy into that directory, under the source's
+# own name, following whatever the project nested inside it. That is a way out of
+# the destination that checking for a symlink on this path alone does not catch.
+writable_file() {
+  no_symlink "$1"
+  [ ! -d "$1" ] || die "$1 is a directory, and setup needs to write a file there.
+       Nothing was changed. Move it aside, then run setup again."
+  [ ! -e "$1" ] || [ -w "$1" ] || die "$1 is not writable.
+       Nothing was changed. Fix its permissions, then run setup again."
+}
+
+# Same problem one level up: \$2 is only safe if it still resolves to \$1 or
+# somewhere under it after every symlink in the path has been followed.
+inside() {
+  local real_root real_dir
+  real_root="$(cd "$1" && pwd -P)" || die "cannot resolve $1"
+  real_dir="$(cd "$2" && pwd -P)" || die "cannot resolve $2"
+  case "$real_dir/" in
+    "$real_root"/|"$real_root"/*) return 0 ;;
+  esac
+  die "$2 resolves to $real_dir, outside $real_root.
+       A symlink in the path would send this install somewhere else.
+       Nothing was changed."
+}
+
+# Says whether setup can write into \$2 without a symlink moving those writes out
+# of \$1, and dies with an explanation if not. The containment check runs against
+# the deepest part of the path that already exists, so a symlinked parent is
+# refused before anything has been created on the far side of it. Separate from
+# managed_dir so a target can ask before it starts writing.
+check_dir() {
+  local root="$1" dir="$2" existing
+  no_symlink "$dir"
+  existing="$dir"
+  while [ ! -d "$existing" ]; do existing="$(dirname "$existing")"; done
+  inside "$root" "$existing"
+}
+
+# Creates a directory setup is about to write into, once that check has passed.
+managed_dir() {
+  check_dir "$1" "$2"
+  mkdir -p "$2"
+}
+
+# Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
+# starts a fresh manifest. Two things have to hold before anything is deleted:
+# the name is one setup itself installs, oss-<skill> with a markdown extension,
+# and the file is still byte for byte what setup wrote. A checksum alone is not
+# proof of authorship, since a manifest that arrived with a repo you cloned can
+# carry the correct hash of a file it also shipped; requiring the name as well
+# keeps that trick inside the namespace setup already owns and overwrites. So a
+# file of yours under any other name is never removed however the manifest
+# describes it, and a managed file you edited yourself is left alone rather than
+# cleaned up. The read keeps a final entry written without a trailing newline.
+reset_managed() {
+  local dir="$1" sum name
+  no_symlink "$dir/.oss-skills-manifest"
+  if [ -f "$dir/.oss-skills-manifest" ]; then
+    while read -r sum name || [ -n "$sum" ]; do
+      case "$name" in
+        ""|.|..|*/*) continue ;;
+        oss-*.md|oss-*.mdc) ;;
+        *) continue ;;
+      esac
+      case "$sum" in *[!0-9a-f]*) continue ;; esac
+      [ "${#sum}" -eq 64 ] || continue
+      [ -f "$dir/$name" ] && [ ! -L "$dir/$name" ] || continue
+      [ "$(file_hash "$dir/$name")" = "$sum" ] || continue
+      rm -f "$dir/$name"
+    done < "$dir/.oss-skills-manifest"
+  fi
+  : > "$dir/.oss-skills-manifest"
+}
+
+# Notes a file setup just wrote, so the next run can tell it apart from anything
+# you put in the same directory yourself.
+record_managed() {
+  echo "$(file_hash "$1")  $(basename "$1")" >> "$(dirname "$1")/.oss-skills-manifest"
+}
+
+# Writes .oss-skills/<name>.md for every skill, into \$1. Skills that no longer
+# exist are dropped, so a rename does not leave the old workflow behind. Files
+# setup did not write are left alone, even if they are named oss-something.
+install_bodies() {
+  local root="$1" name
+  managed_dir "$root" "$root/.oss-skills"
+  reset_managed "$root/.oss-skills"
+  for name in $(skill_names); do
+    writable_file "$root/.oss-skills/$name.md"
+    skill_body "$name" > "$root/.oss-skills/$name.md"
+    record_managed "$root/.oss-skills/$name.md"
+  done
+}
+
+# Emits a router block listing every skill and pointing at .oss-skills/.
+# \$1 = title
+write_router() {
+  local title="$1" name
+  echo "$BEGIN_MARKER"
+  echo
+  echo "# $title"
+  echo
+  echo "Structured workflows for contributing to open source projects."
+  echo "Source: $REPO_URL"
+  echo
+  echo "When the user wants to do one of the things below, read the matching"
+  echo "file under \`.oss-skills/\` in full and follow it step by step. Do not"
+  echo "work from this summary alone, it only exists to route."
+  echo
+  for name in $(skill_names); do
+    echo "- \`.oss-skills/$name.md\` - $(skill_summary "$name")"
+  done
+  echo
+  echo "## Order"
+  echo
+  echo "Evaluate: oss-evaluate-repo, oss-explore-repo, oss-find-issue"
+  echo "Contribute: oss-find-issue, oss-prep-to-contribute, oss-setup-dev-env, oss-contribute, oss-submit-pr, oss-post-pr"
+  echo "Instead of oss-contribute: oss-write-tests or oss-write-docs"
+  echo "After a merge: oss-second-contribution, oss-review-prs"
+  echo "Learning: oss-explore-repo, oss-learn-stack"
+  echo
+  echo "## Core rule"
+  echo
+  echo "The user describes the logic before any code is written. Every skill has"
+  echo "thinking gates, which are points where you stop and make the user explain"
+  echo "their reasoning. Do not skip them and do not answer them on the user's"
+  echo "behalf. A contribution the user does not understand is worth nothing to them."
+  echo
+  echo "$END_MARKER"
+}
+
+# Says whether \$1 can be updated in place, and dies with an explanation if not.
+# Kept separate from the writing below so a target can ask the question before it
+# installs anything, and a refusal never leaves half an install behind.
+check_router() {
+  local file="$1" tokens_b tokens_e begins ends
+  check_dir "$ROOT" "$(dirname "$file")"
+  writable_file "$file"
+  [ -f "$file" ] || return 0
+  grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file" || return 0
+
+  # Rewriting only makes sense for exactly one well formed comment of each kind.
+  # Count occurrences rather than lines, so two markers sharing a line are still
+  # seen as two, and count the bare tokens as well, so a marker someone retyped
+  # without its comment wrapper is caught instead of being quietly skipped.
+  tokens_b=$(count_matches -F "OSS-SKILLS:BEGIN" "$file")
+  tokens_e=$(count_matches -F "OSS-SKILLS:END" "$file")
+  begins=$(count_matches -E "$BEGIN_RE" "$file")
+  ends=$(count_matches -E "$END_RE" "$file")
+  if [ "$tokens_b" -ne 1 ] || [ "$tokens_e" -ne 1 ] ||
+     [ "$begins" -ne 1 ] || [ "$ends" -ne 1 ]; then
+    die "$file has $tokens_b OSS-SKILLS:BEGIN and $tokens_e OSS-SKILLS:END markers,
+       of which $begins and $ends are well formed HTML comments. Exactly one well
+       formed marker of each kind is needed to update in place. Nothing was
+       changed. Tidy the markers by hand, then run setup again."
+  fi
+
+  # BEGIN has to come first, which the replacement relies on. Walking the file in
+  # order settles that without needing to encode a position as a number.
+  awk -v bre="$BEGIN_RE" -v ere="$END_RE" '
+    {
+      line = $0
+      if (!seen_begin) {
+        if (match(line, bre)) { seen_begin = 1; line = substr(line, RSTART + RLENGTH) }
+        else if (match(line, ere)) { bad = 1; exit }
+        else next
+      }
+      if (!seen_end && match(line, ere)) seen_end = 1
+    }
+    END { exit (seen_begin && seen_end && !bad) ? 0 : 1 }
+  ' "$file" ||
+    die "$file has its OSS-SKILLS:END marker before its BEGIN. Nothing was changed."
+}
+
+# Installs the workflow bodies and the router for a target that uses both, after
+# checking the router can actually be updated. \$1 root, \$2 router, \$3 title.
+install_with_router() {
+  check_router "$2"
+  install_bodies "$1"
+  install_router "$2" "$3"
+}
+
+# Puts the router block into \$1 without destroying what is already there.
+# A project that already has its own AGENTS.md keeps every line of it.
+install_router() {
+  local file="$1" title="$2" block tmp mode
+  check_router "$file"
+  block="$(mktemp)"
+  write_router "$title" > "$block"
+
+  managed_dir "$ROOT" "$(dirname "$file")"
+
+  if [ ! -f "$file" ]; then
+    cat "$block" > "$file"
+  elif grep -qF "OSS-SKILLS:BEGIN" "$file" || grep -qF "OSS-SKILLS:END" "$file"; then
+    # The scratch file goes next to the target, so the rename below stays on one
+    # filesystem and is atomic. mktemp picks the name, which keeps setup off any
+    # path the project could have guessed and prepared, and means setup never
+    # removes a file it did not create. The rename drops the mode mktemp chose,
+    # so carry the original across first.
+    tmp="$(mktemp "$(dirname "$file")/.oss-router.XXXXXX")"
+    mode="$(file_mode "$file")"
+
+    # Replace only the block we wrote last time. The markers delimit a region,
+    # not whole lines, so anything sharing a line with them is kept: a file
+    # holding the whole block on one line updates like any other.
+    awk -v b="$block" -v bre="$BEGIN_RE" -v ere="$END_RE" '
+      function emit_block(   l) {
+        while ((getline l < b) > 0) print l
+        close(b)
+      }
+      {
+        line = $0
+        if (!inblock) {
+          if (!match(line, bre)) { print line; next }
+          if (substr(line, 1, RSTART - 1) ~ /[^ \t]/) print substr(line, 1, RSTART - 1)
+          emit_block()
+          inblock = 1
+          line = substr(line, RSTART + RLENGTH)
+        }
+        if (match(line, ere)) {
+          inblock = 0
+          if (substr(line, RSTART + RLENGTH) ~ /[^ \t]/) print substr(line, RSTART + RLENGTH)
+        }
+      }
+      END { if (inblock) exit 1 }
+    ' "$file" > "$tmp" || {
+      rm -f "$tmp" "$block"
+      die "$file could not be rewritten around its OSS-SKILLS markers.
+       Nothing was changed."
+    }
+    [ -n "$mode" ] && chmod "$mode" "$tmp"
+    mv "$tmp" "$file"
+  else
+    # Someone else's file. Append, never truncate.
+    printf '\n' >> "$file"
+    cat "$block" >> "$file"
+    echo "  note: appended to your existing $(basename "$file"), nothing was removed"
+  fi
+
+  rm -f "$block"
+}
+
+# Copies each skill to its own file in \$1, with extension \$2. A manifest
+# records exactly what was written, so the next run can drop a renamed skill
+# without guessing from filenames. Anything setup did not write is left alone,
+# including a file the user happens to have named oss-something.
+install_split() {
+  local dir="$1" ext="$2" name
+  managed_dir "$ROOT" "$dir"
+  reset_managed "$dir"
+  for name in $(skill_names); do
+    writable_file "$dir/$name.$ext"
+    cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
+    record_managed "$dir/$name.$ext"
+  done
+}
+
+# ---------------------------------------------------------------- args
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target) [ $# -ge 2 ] || die "--target needs a value. Run ./setup --help."
+              TARGET="$2"; shift 2 ;;
+    --target=*) TARGET="${1#*=}"; shift ;;
+    --dest) [ $# -ge 2 ] || die "--dest needs a value. Run ./setup --help."
+            DEST="$2"; shift 2 ;;
+    --dest=*) DEST="${1#*=}"; shift ;;
+    --local) LOCAL_MODE=true; shift ;;
+    --list)
+      echo "claude agents cursor cline copilot windsurf zed gemini kiro"
+      exit 0 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; echo "Run ./setup --help" >&2; exit 1 ;;
   esac
 done
 
-echo "OSS-Skills Setup"
-echo "================"
-echo ""
+TARGET="${TARGET:-claude}"
+[ -d "$SKILLS_DIR" ] || die "skills/ not found. Run this from the OSS-Skills repo root."
 
-# Determine install target
-if [ "$LOCAL_MODE" = true ]; then
-  TARGET_DIR="$(pwd)/.claude/skills"
-  echo "Installing to project: $TARGET_DIR"
-else
-  TARGET_DIR="$HOME/.claude/skills"
-  echo "Installing globally: $TARGET_DIR"
-fi
+COUNT=$(skill_names | wc -l | tr -d ' ')
+[ "$COUNT" -gt 0 ] || die "No skills found in $SKILLS_DIR."
 
-mkdir -p "$TARGET_DIR"
+ROOT="${DEST:-$(pwd)}"
+[ -d "$ROOT" ] || die "No such directory: $ROOT"
+# Resolved once, so the symlink guards below compare against a physical path.
+# A destination you named yourself is your choice and may well be a symlink;
+# what must not be a symlink is anything setup goes on to create inside it.
+ROOT="$(cd "$ROOT" && pwd -P)"
 
-# Check prerequisites
-echo ""
-echo "Checking prerequisites..."
+echo "OSS-Skills"
+echo "=========="
+echo
 
-if ! command -v gh &>/dev/null; then
-  echo "  ERROR: 'gh' CLI not found. All skills require it."
-  echo "  Install: https://cli.github.com/"
-  echo ""
-  echo "  Skills will be installed, but they won't work without gh."
-  echo "  Install gh, run 'gh auth login', then try the skills."
-else
-  echo "  gh CLI: found"
-  if gh auth status &>/dev/null 2>&1; then
-    echo "  gh auth: authenticated"
-  else
-    echo "  WARNING: gh not authenticated. Run 'gh auth login' before using skills."
-  fi
-fi
+# ---------------------------------------------------------------- prereqs
 
 if ! command -v git &>/dev/null; then
-  echo "  ERROR: git not found. Cannot continue."
-  exit 1
-else
-  echo "  git: found"
+  die "git not found."
 fi
 
-echo ""
+if ! command -v shasum &>/dev/null && ! command -v sha256sum &>/dev/null; then
+  die "neither shasum nor sha256sum found. setup needs one of them to keep track
+       of the files it installed, so that it never deletes one of yours."
+fi
 
-# Install skills
-SKILLS=(
-  oss-evaluate-repo
-  oss-find-issue
-  oss-prep-to-contribute
-  oss-setup-dev-env
-  oss-contribute
-  oss-write-tests
-  oss-write-docs
-  oss-submit-pr
-  oss-post-pr
-  oss-debug-ci
-  oss-second-contribution
-  oss-review-prs
-  oss-find-real-issues
-  oss-explore-repo
-  oss-learn-stack
-)
+if ! command -v gh &>/dev/null; then
+  echo "WARNING: 'gh' CLI not found. Every skill uses it for GitHub operations."
+  echo "         Install from https://cli.github.com/ then run 'gh auth login'."
+  echo
+elif ! gh auth status &>/dev/null 2>&1; then
+  echo "WARNING: gh is installed but not authenticated. Run 'gh auth login'."
+  echo
+fi
 
-echo "Installing ${#SKILLS[@]} skills..."
+# ---------------------------------------------------------------- install
 
-INSTALLED=0
-for skill in "${SKILLS[@]}"; do
-  skill_target="$TARGET_DIR/$skill"
-  mkdir -p "$skill_target"
-  if cp "$SKILLS_DIR/$skill/SKILL.md" "$skill_target/SKILL.md" 2>/dev/null; then
-    echo "  $skill"
-    INSTALLED=$((INSTALLED + 1))
-  else
-    echo "  FAILED: $skill"
-  fi
+case "$TARGET" in
+  claude)
+    if [ "$LOCAL_MODE" = true ]; then
+      # A project directory is only as trustworthy as whoever you cloned it
+      # from, so it gets the symlink guards. $HOME below is your own, and
+      # people symlink ~/.claude into a dotfiles repo on purpose.
+      DIR="$ROOT/.claude/skills"
+      managed_dir "$ROOT" "$DIR"
+      for name in $(skill_names); do
+        managed_dir "$ROOT" "$DIR/$name"
+        writable_file "$DIR/$name/SKILL.md"
+        cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+      done
+    else
+      DIR="$HOME/.claude/skills"
+      mkdir -p "$DIR"
+      for name in $(skill_names); do
+        mkdir -p "$DIR/$name"
+        cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+      done
+    fi
+    WHERE="$DIR"
+    NOTE="Invoke with /oss-find-issue, /oss-contribute, and so on."
+    ;;
+
+  agents)
+    install_with_router "$ROOT" "$ROOT/AGENTS.md" "OSS Contribution Skills"
+    WHERE="$ROOT/AGENTS.md and $ROOT/.oss-skills/"
+    NOTE="Ask your agent to follow the oss-find-issue workflow to start."
+    ;;
+
+  gemini)
+    install_with_router "$ROOT" "$ROOT/GEMINI.md" "OSS Contribution Skills"
+    WHERE="$ROOT/GEMINI.md and $ROOT/.oss-skills/"
+    NOTE="Gemini CLI reads GEMINI.md automatically."
+    ;;
+
+  copilot)
+    install_with_router "$ROOT" "$ROOT/.github/copilot-instructions.md" "OSS Contribution Skills"
+    WHERE="$ROOT/.github/copilot-instructions.md and $ROOT/.oss-skills/"
+    NOTE="Copilot reads .github/copilot-instructions.md as repo context."
+    ;;
+
+  zed)
+    install_with_router "$ROOT" "$ROOT/.rules" "OSS Contribution Skills"
+    WHERE="$ROOT/.rules and $ROOT/.oss-skills/"
+    NOTE="Zed reads .rules from the project root."
+    ;;
+
+  cursor)
+    install_split "$ROOT/.cursor/rules" mdc
+    WHERE="$ROOT/.cursor/rules/"
+    NOTE="Reference a workflow in chat, for example: follow the oss-contribute skill."
+    ;;
+
+  cline)
+    install_split "$ROOT/.clinerules" md
+    WHERE="$ROOT/.clinerules/"
+    NOTE="Cline loads .clinerules/ automatically."
+    ;;
+
+  windsurf)
+    install_split "$ROOT/.windsurf/rules" md
+    WHERE="$ROOT/.windsurf/rules/"
+    NOTE="Windsurf loads .windsurf/rules/ automatically."
+    ;;
+
+  kiro)
+    install_split "$ROOT/.kiro/skills" md
+    WHERE="$ROOT/.kiro/skills/"
+    NOTE="Reference the skills from your Kiro workflow definitions."
+    ;;
+
+  *)
+    die "Unknown target: $TARGET. Run ./setup --list for the supported ones."
+    ;;
+esac
+
+# ---------------------------------------------------------------- report
+
+echo "Installed $COUNT skills for $TARGET."
+echo "  $WHERE"
+echo
+skill_names | while read -r name; do
+  printf '  %-24s %s\n' "$name" "$(skill_summary "$name")"
 done
-
-if [ "$INSTALLED" -ne "${#SKILLS[@]}" ]; then
-  echo ""
-  echo "WARNING: Only $INSTALLED/${#SKILLS[@]} skills installed. Check file permissions."
-fi
-
-echo ""
-echo "Done. $INSTALLED skills installed."
-echo ""
-echo "Available skills:"
-echo ""
-echo "  Evaluation:"
-echo "  /oss-evaluate-repo       Assess repo health before investing time"
-echo ""
-echo "  Contribution pipeline:"
-echo "  /oss-find-issue          Find unclaimed issues matching your skills"
-echo "  /oss-prep-to-contribute  Prepare to contribute (docs, eligibility, knowledge check)"
-echo "  /oss-setup-dev-env       Set up dev environment for unfamiliar repos"
-echo "  /oss-contribute          Research the issue, you describe the logic"
-echo "  /oss-submit-pr           Submit a PR following repo guidelines"
-echo "  /oss-post-pr             Handle PR review feedback"
-echo ""
-echo "  Contribution types:"
-echo "  /oss-write-tests         Write tests as a standalone contribution"
-echo "  /oss-write-docs          Contribute documentation improvements"
-echo ""
-echo "  CI and review:"
-echo "  /oss-debug-ci            Debug CI failures in unfamiliar pipelines"
-echo "  /oss-review-prs          Review PRs to learn and build trust"
-echo ""
-echo "  Growth:"
-echo "  /oss-second-contribution Plan your path to regular contributor"
-echo ""
-echo "  Research:"
-echo "  /oss-find-real-issues    Find real code issues not in the tracker"
-echo "  /oss-explore-repo        Guided codebase exploration"
-echo "  /oss-learn-stack         Learn unfamiliar tech from the repo's own code"
-echo ""
-echo "Start with: /oss-evaluate-repo, /oss-find-issue, or /oss-explore-repo"
+echo
+echo "$NOTE"
+echo
+echo "Start with oss-evaluate-repo, oss-find-issue, or oss-explore-repo."
