@@ -96,6 +96,12 @@ file_hash() {
   fi
 }
 
+# Permission bits of \$1 as octal. GNU stat first, then the BSD spelling macOS
+# ships. Empty if neither works, in which case the caller leaves the mode alone.
+file_mode() {
+  stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null || true
+}
+
 # setup never writes through a symlink. A project you cloned could otherwise
 # ship one at a path setup manages and redirect the write anywhere the user can
 # write, which is the one way an installer turns into a way to lose files.
@@ -216,7 +222,7 @@ write_router() {
 # Puts the router block into \$1 without destroying what is already there.
 # A project that already has its own AGENTS.md keeps every line of it.
 install_router() {
-  local file="$1" title="$2" block tokens_b tokens_e begins ends
+  local file="$1" title="$2" block tmp mode tokens_b tokens_e begins ends
   block="$(mktemp)"
   write_router "$title" > "$block"
 
@@ -244,11 +250,13 @@ install_router() {
        changed. Tidy the markers by hand, then run setup again."
     fi
 
-    # The scratch file sits next to the target so the rename below stays on one
-    # filesystem, which means its name is guessable. Clear it first, so a
-    # symlink left there by the project cannot catch the write.
-    no_symlink "$file.oss-tmp"
-    rm -f "$file.oss-tmp"
+    # The scratch file goes next to the target, so the rename below stays on one
+    # filesystem and is atomic. mktemp picks the name, which keeps setup off any
+    # path the project could have guessed and prepared, and means setup never
+    # removes a file it did not create. The rename drops the mode mktemp chose,
+    # so carry the original across first.
+    tmp="$(mktemp "$(dirname "$file")/.oss-router.XXXXXX")"
+    mode="$(file_mode "$file")"
 
     # Replace only the block we wrote last time. The markers delimit a region,
     # not whole lines, so anything sharing a line with them is kept: a file
@@ -273,11 +281,12 @@ install_router() {
         }
       }
       END { if (inblock) exit 1 }
-    ' "$file" > "$file.oss-tmp" || {
-      rm -f "$file.oss-tmp" "$block"
+    ' "$file" > "$tmp" || {
+      rm -f "$tmp" "$block"
       die "$file has its OSS-SKILLS:END marker before its BEGIN. Nothing was changed."
     }
-    mv "$file.oss-tmp" "$file"
+    [ -n "$mode" ] && chmod "$mode" "$tmp"
+    mv "$tmp" "$file"
   else
     # Someone else's file. Append, never truncate.
     printf '\n' >> "$file"

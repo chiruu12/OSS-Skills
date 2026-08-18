@@ -318,19 +318,34 @@ jobs:
             echo "::error::cleanup deleted a managed file after the user edited it"; fail=1; }
           exit $fail
 
-      - name: The router scratch file cannot be a symlink either
+      - name: The router update leaves prepared scratch paths alone
         run: |
           fail=0
+
+          # a regular file of the user's at the name the old code used
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          echo "mine" > "$d/AGENTS.md.oss-tmp"
+          ./setup --target agents --dest "$d" >/dev/null || {
+            echo "::error::a file at the old scratch path blocked the update"; fail=1; }
+          [ -f "$d/AGENTS.md.oss-tmp" ] || {
+            echo "::error::the router update deleted a file it did not create"; fail=1; }
+
+          # the same name as a symlink pointing out of the project
           d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
           echo "do not touch" > "$d/out/victim"
           ./setup --target agents --dest "$d/proj" >/dev/null
           ln -s "$d/out/victim" "$d/proj/AGENTS.md.oss-tmp"
-
-          ./setup --target agents --dest "$d/proj" >/dev/null 2>&1 || true
+          ./setup --target agents --dest "$d/proj" >/dev/null || {
+            echo "::error::a symlink at the old scratch path blocked the update"; fail=1; }
           [ "$(cat "$d/out/victim")" = "do not touch" ] || {
-            echo "::error::the router update wrote through a symlinked scratch file"; fail=1; }
+            echo "::error::the router update wrote through a prepared scratch path"; fail=1; }
           [ -L "$d/proj/AGENTS.md" ] && {
             echo "::error::the router was replaced by a symlink"; fail=1; }
+          grep -q 'oss-find-issue' "$d/proj/AGENTS.md" || {
+            echo "::error::the router did not update"; fail=1; }
+          [ -z "$(find "$d/proj" -maxdepth 1 -name '.oss-router.*')" ] || {
+            echo "::error::a scratch file was left behind"; fail=1; }
           exit $fail
 
       - name: A destination you named yourself may be a symlink
