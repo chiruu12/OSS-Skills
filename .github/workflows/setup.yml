@@ -72,6 +72,14 @@ jobs:
               echo "::error::$t re-run changed file count to $again"
               fail=1
             fi
+            # a router target must still hold exactly one managed block, which the
+            # skill file count above cannot see
+            for r in AGENTS.md GEMINI.md .rules .github/copilot-instructions.md; do
+              [ -f "$d/$r" ] || continue
+              blocks=$(grep -c 'OSS-SKILLS:BEGIN' "$d/$r" || true)
+              [ "$blocks" -eq 1 ] || {
+                echo "::error::$t left $blocks managed blocks in $r after a re-run"; fail=1; }
+            done
 
             echo "$t ok"
           done
@@ -86,6 +94,15 @@ jobs:
           for ref in $(grep -o '`\.oss-skills/[^`]*\.md`' "$d/AGENTS.md" | tr -d '`'); do
             [ -f "$d/$ref" ] || { echo "::error::AGENTS.md points at missing $ref"; fail=1; }
           done
+          # Each routed line must carry a summary, which is the only thing that
+          # exercises skill_summary's frontmatter parsing.
+          while IFS= read -r line; do
+            case "$line" in
+              *'`'*'` - '?*) ;;
+              *) echo "::error::router line has no summary: $line"; fail=1 ;;
+            esac
+          done < <(grep '^- `\.oss-skills/' "$d/AGENTS.md")
+
           # Every installed skill must be routed to, not just exist on disk.
           for f in "$d"/.oss-skills/*.md; do
             name=$(basename "$f")
@@ -415,9 +432,12 @@ jobs:
               echo "::error::$t wrote through a directory at a skill path"; fail=1; }
           done
 
-          # same shape for claude --local, whose skill files sit one level deeper
+          # same shape for claude --local, whose skill files sit one level deeper.
+          # the nested symlink is what gives the victim check its teeth: without
+          # it the assertion would hold however setup behaved.
           d=$(mktemp -d); mkdir -p "$d/proj/.claude/skills/oss-contribute/SKILL.md" "$d/out"
           echo "do not touch" > "$d/out/victim"
+          ln -s "$d/out/victim" "$d/proj/.claude/skills/oss-contribute/SKILL.md/SKILL.md"
           ./setup --target claude --local --dest "$d/proj" >/dev/null 2>&1 && {
             echo "::error::claude --local accepted a directory at a skill path"; fail=1; }
           [ "$(cat "$d/out/victim")" = "do not touch" ] || {
@@ -461,6 +481,39 @@ jobs:
           got=$(find "$d/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')
           [ "$got" -eq "$count" ] || {
             echo "::error::claude --local installed $got of $count"; exit 1; }
+          empty=$(find "$d/.claude/skills" -name SKILL.md -size -100c | wc -l | tr -d ' ')
+          [ "$empty" -eq 0 ] || {
+            echo "::error::claude --local installed $empty all but empty skill files"; exit 1; }
+          ./setup --target claude --local --dest "$d" >/dev/null || {
+            echo "::error::claude --local is not safe to re-run"; exit 1; }
+          again=$(find "$d/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')
+          [ "$again" -eq "$count" ] || {
+            echo "::error::claude --local re-run changed the count to $again"; exit 1; }
+
+      - name: An unusable skills tree is reported, not exited silently
+        run: |
+          fail=0
+          # a work in progress directory with no SKILL.md must not stop the rest
+          d=$(mktemp -d); mkdir -p "$d/repo/skills"
+          cp -R skills/oss-contribute "$d/repo/skills/"
+          mkdir -p "$d/repo/skills/oss-zz-wip"
+          cp setup "$d/repo/setup"; chmod +x "$d/repo/setup"
+          dest=$(mktemp -d)
+          (cd "$d/repo" && ./setup --target agents --dest "$dest" >/dev/null) || {
+            echo "::error::a skills directory without SKILL.md aborted the install"; fail=1; }
+          [ -f "$dest/.oss-skills/oss-contribute.md" ] || {
+            echo "::error::the valid skill was not installed"; fail=1; }
+
+          # and an empty tree must say so rather than exit silently
+          d=$(mktemp -d); mkdir -p "$d/repo/skills"
+          cp setup "$d/repo/setup"; chmod +x "$d/repo/setup"
+          out=$(cd "$d/repo" && ./setup --target agents --dest "$(mktemp -d)" 2>&1) && {
+            echo "::error::an empty skills tree exited 0"; fail=1; }
+          case "$out" in
+            *"No skills found"*) ;;
+            *) echo "::error::an empty skills tree gave no explanation: $out"; fail=1 ;;
+          esac
+          exit $fail
 
       - name: Unknown target fails loudly
         run: |

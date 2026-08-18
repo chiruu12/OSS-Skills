@@ -18,6 +18,10 @@ skill_names() {
   for d in "$SKILLS_DIR"/oss-*/; do
     [ -f "$d/SKILL.md" ] && basename "$d"
   done
+  # The last iteration's test must not become this function's exit status: under
+  # pipefail that aborts the caller, and the count check below never gets to
+  # explain itself.
+  return 0
 }
 
 # First line of the description in a SKILL.md, written either inline after the
@@ -126,6 +130,8 @@ writable_file() {
   no_symlink "$1"
   [ ! -d "$1" ] || die "$1 is a directory, and setup needs to write a file there.
        Nothing was changed. Move it aside, then run setup again."
+  [ ! -e "$1" ] || [ -w "$1" ] || die "$1 is not writable.
+       Nothing was changed. Fix its permissions, then run setup again."
 }
 
 # Same problem one level up: \$2 is only safe if it still resolves to \$1 or
