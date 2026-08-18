@@ -137,8 +137,10 @@ jobs:
           ./setup --target cursor --dest "$d" >/dev/null
 
           # A skill installed by an earlier version, then renamed away.
-          touch "$d/.cursor/rules/oss-removed.mdc"
-          echo oss-removed.mdc >> "$d/.cursor/rules/.oss-skills-manifest"
+          echo stale > "$d/.cursor/rules/oss-removed.mdc"
+          printf '%s  oss-removed.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-removed.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
           ./setup --target cursor --dest "$d" >/dev/null
 
           [ -f "$d/.cursor/rules/my-own.mdc" ] || {
@@ -182,8 +184,12 @@ jobs:
           ./setup --target agents --dest "$d" >/dev/null
           echo mine > "$d/.oss-skills/oss-my-own.md"
           echo secret > "$d/keep-me"
-          printf '../keep-me\noss-removed.md\n' >> "$d/.oss-skills/.oss-skills-manifest"
-          touch "$d/.oss-skills/oss-removed.md"
+          echo stale > "$d/.oss-skills/oss-removed.md"
+          # a real managed file, and an escape attempt carrying a valid checksum
+          printf '%s  oss-removed.md\n%s  ../keep-me\n' \
+            "$(shasum -a 256 "$d/.oss-skills/oss-removed.md" | cut -d' ' -f1)" \
+            "$(shasum -a 256 "$d/keep-me" | cut -d' ' -f1)" \
+            >> "$d/.oss-skills/.oss-skills-manifest"
           ./setup --target agents --dest "$d" >/dev/null
 
           [ -f "$d/keep-me" ] || {
@@ -198,8 +204,10 @@ jobs:
         run: |
           d=$(mktemp -d)
           ./setup --target cursor --dest "$d" >/dev/null
-          touch "$d/.cursor/rules/oss-stale.mdc"
-          printf 'oss-stale.mdc' >> "$d/.cursor/rules/.oss-skills-manifest"
+          echo stale > "$d/.cursor/rules/oss-stale.mdc"
+          printf '%s  oss-stale.mdc' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-stale.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
           ./setup --target cursor --dest "$d" >/dev/null
           [ -f "$d/.cursor/rules/oss-stale.mdc" ] && {
             echo "::error::a manifest entry with no trailing newline was skipped"; exit 1; }
@@ -275,6 +283,54 @@ jobs:
           [ "$(ls -A "$d/out" | tr -d '[:space:]')" = "victim" ] || {
             echo "::error::setup created directories through a symlinked parent"; fail=1; }
 
+          exit $fail
+
+      - name: A manifest cannot name a file setup did not write
+        run: |
+          fail=0
+          d=$(mktemp -d); mkdir -p "$d/.cursor/rules"
+
+          # a manifest that came with the repo, naming files it does not own
+          echo "my own rule"  > "$d/.cursor/rules/my-notes.mdc"
+          echo "looks managed" > "$d/.cursor/rules/oss-decoy.mdc"
+          # a bare name, and a name carrying a checksum that does not match
+          printf 'my-notes.mdc\n%s  oss-decoy.mdc\n' \
+            "$(printf 'wrong' | shasum -a 256 | cut -d' ' -f1)" \
+            > "$d/.cursor/rules/.oss-skills-manifest"
+
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/my-notes.mdc" ] || {
+            echo "::error::a supplied manifest deleted a file setup never wrote"; fail=1; }
+          [ -f "$d/.cursor/rules/oss-decoy.mdc" ] || {
+            echo "::error::a supplied manifest deleted an oss-named file setup never wrote"; fail=1; }
+
+          # a stale managed file the user has since edited stops being setup's
+          # to delete, because it is no longer what setup wrote
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          echo stale > "$d/.cursor/rules/oss-gone.mdc"
+          printf '%s  oss-gone.mdc\n' \
+            "$(shasum -a 256 "$d/.cursor/rules/oss-gone.mdc" | cut -d' ' -f1)" \
+            >> "$d/.cursor/rules/.oss-skills-manifest"
+          echo "my edit" >> "$d/.cursor/rules/oss-gone.mdc"
+          ./setup --target cursor --dest "$d" >/dev/null
+          [ -f "$d/.cursor/rules/oss-gone.mdc" ] || {
+            echo "::error::cleanup deleted a managed file after the user edited it"; fail=1; }
+          exit $fail
+
+      - name: The router scratch file cannot be a symlink either
+        run: |
+          fail=0
+          d=$(mktemp -d); mkdir -p "$d/proj" "$d/out"
+          echo "do not touch" > "$d/out/victim"
+          ./setup --target agents --dest "$d/proj" >/dev/null
+          ln -s "$d/out/victim" "$d/proj/AGENTS.md.oss-tmp"
+
+          ./setup --target agents --dest "$d/proj" >/dev/null 2>&1 || true
+          [ "$(cat "$d/out/victim")" = "do not touch" ] || {
+            echo "::error::the router update wrote through a symlinked scratch file"; fail=1; }
+          [ -L "$d/proj/AGENTS.md" ] && {
+            echo "::error::the router was replaced by a symlink"; fail=1; }
           exit $fail
 
       - name: A destination you named yourself may be a symlink

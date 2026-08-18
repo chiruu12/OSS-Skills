@@ -86,6 +86,16 @@ count_matches() {
   { grep -o "$1" "$2" "$3" || true; } | wc -l | tr -d ' '
 }
 
+# Checksum of \$1, used to tell a file setup wrote from one that was already
+# there. shasum ships with macOS and most Linux images, sha256sum with the rest.
+file_hash() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | cut -d' ' -f1
+  else
+    sha256sum "$1" | cut -d' ' -f1
+  fi
+}
+
 # setup never writes through a symlink. A project you cloned could otherwise
 # ship one at a path setup manages and redirect the write anywhere the user can
 # write, which is the one way an installer turns into a way to lose files.
@@ -124,19 +134,32 @@ managed_dir() {
 }
 
 # Removes the files a previous run recorded in \$1/.oss-skills-manifest, then
-# starts a fresh manifest. Entries are plain filenames by construction; anything
-# else is ignored rather than followed out of the directory. The read keeps a
-# final entry that was written without a trailing newline.
+# starts a fresh manifest. Every entry is a checksum and a plain filename, and a
+# file is removed only when it is still byte for byte what setup wrote. A
+# manifest that arrived with a repo you cloned therefore cannot name one of your
+# files and have setup delete it, and a managed file you edited yourself is left
+# alone rather than cleaned up. The read keeps a final entry that was written
+# without a trailing newline.
 reset_managed() {
-  local dir="$1" old
+  local dir="$1" sum name
   no_symlink "$dir/.oss-skills-manifest"
   if [ -f "$dir/.oss-skills-manifest" ]; then
-    while read -r old || [ -n "$old" ]; do
-      case "$old" in ""|.|..|*/*) continue ;; esac
-      rm -f "$dir/$old"
+    while read -r sum name || [ -n "$sum" ]; do
+      case "$name" in ""|.|..|*/*) continue ;; esac
+      case "$sum" in *[!0-9a-f]*) continue ;; esac
+      [ "${#sum}" -eq 64 ] || continue
+      [ -f "$dir/$name" ] && [ ! -L "$dir/$name" ] || continue
+      [ "$(file_hash "$dir/$name")" = "$sum" ] || continue
+      rm -f "$dir/$name"
     done < "$dir/.oss-skills-manifest"
   fi
   : > "$dir/.oss-skills-manifest"
+}
+
+# Notes a file setup just wrote, so the next run can tell it apart from anything
+# you put in the same directory yourself.
+record_managed() {
+  echo "$(file_hash "$1")  $(basename "$1")" >> "$(dirname "$1")/.oss-skills-manifest"
 }
 
 # Writes .oss-skills/<name>.md for every skill, into \$1. Skills that no longer
@@ -149,7 +172,7 @@ install_bodies() {
   for name in $(skill_names); do
     no_symlink "$root/.oss-skills/$name.md"
     skill_body "$name" > "$root/.oss-skills/$name.md"
-    echo "$name.md" >> "$root/.oss-skills/.oss-skills-manifest"
+    record_managed "$root/.oss-skills/$name.md"
   done
 }
 
@@ -221,6 +244,12 @@ install_router() {
        changed. Tidy the markers by hand, then run setup again."
     fi
 
+    # The scratch file sits next to the target so the rename below stays on one
+    # filesystem, which means its name is guessable. Clear it first, so a
+    # symlink left there by the project cannot catch the write.
+    no_symlink "$file.oss-tmp"
+    rm -f "$file.oss-tmp"
+
     # Replace only the block we wrote last time. The markers delimit a region,
     # not whole lines, so anything sharing a line with them is kept: a file
     # holding the whole block on one line updates like any other.
@@ -270,7 +299,7 @@ install_split() {
   for name in $(skill_names); do
     no_symlink "$dir/$name.$ext"
     cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
-    echo "$name.$ext" >> "$dir/.oss-skills-manifest"
+    record_managed "$dir/$name.$ext"
   done
 }
 
@@ -312,6 +341,11 @@ echo
 
 if ! command -v git &>/dev/null; then
   die "git not found."
+fi
+
+if ! command -v shasum &>/dev/null && ! command -v sha256sum &>/dev/null; then
+  die "neither shasum nor sha256sum found. setup needs one of them to keep track
+       of the files it installed, so that it never deletes one of yours."
 fi
 
 if ! command -v gh &>/dev/null; then
