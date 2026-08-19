@@ -84,6 +84,24 @@ git rebase upstream/main
 git diff upstream/main...HEAD --stat
 ```
 
+**Re-check that the issue is still the user's.** Implementation takes days, and a
+claim made on Monday can be overtaken by Thursday. Before pushing anything, run
+the same checks `oss-find-issue` step 5 runs:
+
+```bash
+gh issue view {number} -R {owner}/{repo} --json state,assignees,labels,comments
+
+gh api repos/{owner}/{repo}/issues/{number}/timeline --paginate \
+  --jq '.[] | select(.event == "cross-referenced") | .source.issue
+        | select(.pull_request != null)
+        | "\(.state)\t\(.repository.full_name)#\(.number)\t\(.user.login)"'
+```
+
+If somebody else opened a PR for this issue while the user was working, stop. Do
+not open a competing PR. Say so in a comment, offer to review theirs, and move on
+to the next issue. Losing a few days of work is cheaper than the reputation of
+someone who races other contributors.
+
 ### 3. Review the diff
 
 Go through the entire diff and flag issues:
@@ -234,6 +252,8 @@ Present these before submission as a final checklist:
 
 ## Verification Checklist
 
+- [ ] Issue re-checked: still open, still unassigned, no competing PR opened
+      while the user was implementing (step 2)
 - [ ] All local tests pass (including new tests)
 - [ ] Lint/formatting passes locally
 - [ ] Diff only touches files relevant to the issue (no scope creep)
@@ -248,6 +268,7 @@ Present these before submission as a final checklist:
 
 - **DO NOT** write the PR description for the user. review and give feedback on theirs
 - **DO NOT** auto-fix diff issues. tell the user what and where, they fix it
+- **DO NOT** open a PR against an issue somebody else claimed while the user was working. stand down and take the next one
 - **DO NOT** submit with failing CI. ever
 - **DO NOT** skip the pre-flight checks. "it works on my machine" is not enough
 - **DO NOT** include "AI-generated" boilerplate in the PR unless the repo's CODE_OF_CONDUCT requires disclosure
