@@ -106,6 +106,39 @@ gh issue list -R {owner}/{repo} --state closed --limit 5 --json number,comments 
   done
 ```
 
+**Does an outsider actually get merged?** This is the single question the rest of
+the section is circling, and it needs counting rather than eyeballing. Note that
+`gh pr list` has no `authorAssociation` field. Use the REST API:
+
+```bash
+gh api "repos/{owner}/{repo}/pulls?state=closed&per_page=100" \
+  --jq '.[] | select(.merged_at != null) | "\(.author_association)\t\(.user.login)"' \
+  | sort | uniq -c | sort -rn
+```
+
+`author_association` describes permissions on this repo, not employment, so it
+does not answer the question on its own. A paid maintainer without write access
+to this particular repo shows up as `CONTRIBUTOR`, or even `NONE`. Check the
+logins before believing the split:
+
+```bash
+gh api users/{login} --jq '"\(.login)\tcompany: \(.company // "-")"'
+
+# Public membership only. Private members return nothing, so a miss proves nothing
+gh api orgs/{owner}/members/{login} --silent 2>/dev/null && echo member || echo "not public"
+```
+
+What the numbers mean:
+
+- **Count distinct outside logins, not merged PRs.** Twenty merges from one prolific
+  outsider says that person is trusted. It says nothing about the next stranger.
+- **A high count of one-PR authors is ambiguous.** Read what those PRs changed. If
+  they are typos, dependency bumps and README edits, the repo is absorbing drive-by
+  churn rather than welcoming contributors, and a real patch will be treated
+  differently.
+- **Zero outside authors in the last hundred merges is the answer.** Whatever
+  CONTRIBUTING.md says, this repo does not merge strangers. Pick another one.
+
 **Healthy signals**:
 - Issues get responses within a week
 - PRs get reviewed within 2 weeks

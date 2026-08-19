@@ -52,8 +52,10 @@ Check for:
 
 ```bash
 # Check if external PRs actually get merged
-gh pr list -R {owner}/{repo} --state merged --limit 20 --json author,mergedAt,authorAssociation | \
-  jq '[.[] | select(.authorAssociation != "MEMBER" and .authorAssociation != "OWNER")]'
+gh api "repos/{owner}/{repo}/pulls?state=closed&per_page=50" \
+  --jq '.[] | select(.merged_at != null)
+        | select(.author_association != "MEMBER" and .author_association != "OWNER")
+        | "\(.author_association)\t\(.user.login)\t\(.title)"'
 ```
 
 If the repo doesn't accept outside contributions, **tell the user immediately** and suggest alternatives. Don't waste their time.
