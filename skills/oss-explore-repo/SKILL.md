@@ -190,6 +190,47 @@ The user writes their own architecture summary. Not a copy of the LLM's summary 
 
 Review their summary. Flag anything incorrect but don't rewrite it.
 
+## Thinking Gates
+
+Exploration without these is reading, not learning. Each one is inline in the step
+it belongs to, and none of them may be answered on the user's behalf.
+
+- **Step 2**: explain what this project does in one sentence, and who uses it
+- **Step 4**: define 3 domain terms in the user's own words
+- **Step 5**: describe where a new feature would go, naming the files
+
+If the user cannot answer, go back into the code with them. Do not supply the
+answer and move on.
+
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "I'll read the README and start coding" | The README says what the project does for its users. It says nothing about how the code is arranged, so you pattern-match on the wrong abstraction and the reviewer sees it immediately. |
+| "I've opened every file, I understand the repo" | File count is not understanding. You understand a repo when you can predict which file a change belongs in before you go looking. |
+| "I don't need the domain language, I can read code" | Every issue title and review comment is written in those words. Not knowing them means not understanding the feedback you get. |
+| "I'll explore as I go while fixing the issue" | Issue-driven reading teaches one code path. The second contribution starts from zero again, which is why most people never make one. |
+| "The architecture is obvious from the directory names" | Directory names describe storage. They do not tell you what calls what, and that is the part you need. |
+
+## Red Flags
+
+- User cannot state what the project does in one sentence after step 2. exploration is going too wide, too fast
+- User describes the architecture by listing folders instead of by what flows through them
+- Exploration has run for hours with nothing written down. it will not survive the week
+- User starts asking "so what should I fix" during exploration. that is `oss-find-issue`, and it is premature
+- The repo turns out to have no tests and no recent commits. explore something else
+
+## Verification Checklist
+
+- [ ] User stated why they are exploring this repo before starting (step 1)
+- [ ] User explained the project in one sentence, unaided (step 2 gate)
+- [ ] Entry points identified, and the user can name what runs first (step 3)
+- [ ] User defined 3 domain terms in their own words (step 4 gate)
+- [ ] User described where a new feature would go, by file (step 5 gate)
+- [ ] Recent history read. the user can say what maintainers have been working on (step 6)
+- [ ] Knowledge gaps named, each with a plan or a handoff to `oss-learn-stack` (step 7)
+- [ ] Personal map written down somewhere the user will find it again (step 8)
+
 ## Related Skills
 
 - **Next step (found an issue)**: → `oss-find-issue`: find an issue that matches your new understanding
