@@ -40,6 +40,27 @@ skill_summary() {
   ' "$SKILLS_DIR/$1/SKILL.md"
 }
 
+# Prints the "Not for ..." sentences from $1's description on a single line, or
+# nothing if the skill has none. The router carries it so an agent choosing
+# between fifteen one-line summaries can also see what each skill is not for.
+skill_notfor() {
+  awk '
+    /^description:/ { indesc = 1; next }
+    indesc && /^[a-zA-Z_-]+:/ { exit }
+    indesc && /^---/ { exit }
+    indesc && NF {
+      sub(/^[ \t]+/, ""); sub(/[ \t]+$/, "")
+      all = all (all ? " " : "") $0
+    }
+    END {
+      # Wrapping puts "Not for" mid-line as often as at the start, so join the
+      # block first and cut from wherever the sentence actually begins.
+      i = index(all, "Not for")
+      if (i) print substr(all, i)
+    }
+  ' "$SKILLS_DIR/$1/SKILL.md"
+}
+
 # Strip YAML frontmatter so the body can be embedded in a plain rules file.
 skill_body() {
   awk 'NR==1 && /^---$/ { fm = 1; next } fm && /^---$/ { fm = 0; next } !fm' \
@@ -220,7 +241,7 @@ install_bodies() {
 # Emits a router block listing every skill and pointing at .oss-skills/.
 # \$1 = title
 write_router() {
-  local title="$1" name
+  local title="$1" name notfor
   echo "$BEGIN_MARKER"
   echo
   echo "# $title"
@@ -234,6 +255,8 @@ write_router() {
   echo
   for name in $(skill_names); do
     echo "- \`.oss-skills/$name.md\` - $(skill_summary "$name")"
+    notfor="$(skill_notfor "$name")"
+    [ -z "$notfor" ] || echo "  $notfor"
   done
   echo
   echo "## Order"

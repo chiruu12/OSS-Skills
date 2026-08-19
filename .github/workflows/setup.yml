@@ -111,6 +111,30 @@ jobs:
           done
           exit $fail
 
+      - name: Every skill rules itself out, and the router repeats it
+        run: |
+          d=$(mktemp -d)
+          ./setup --target agents --dest "$d" >/dev/null
+          fail=0
+          for s in skills/*/SKILL.md; do
+            name=$(basename "$(dirname "$s")")
+            # The description is all an agent sees when choosing between fifteen
+            # skills, so each one has to say what it is not for.
+            sed -n '/^description:/,/^---$/p' "$s" | grep -q 'Not for' || {
+              echo "::error::$name has no 'Not for' line in its description"
+              fail=1
+            }
+          done
+          # Targets with a router strip frontmatter from the bodies, so that
+          # line only reaches them if write_router carries it.
+          routed=$({ grep -c '^- `\.oss-skills/' "$d/AGENTS.md" || true; })
+          ruled=$({ grep -c '^  Not for' "$d/AGENTS.md" || true; })
+          [ "$routed" = "$ruled" ] || {
+            echo "::error::$routed skills routed, $ruled carry a 'Not for' line"
+            fail=1
+          }
+          exit $fail
+
       - name: Embedded bodies have no leftover frontmatter
         run: |
           d=$(mktemp -d)
