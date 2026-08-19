@@ -4,6 +4,8 @@ description: |
   Submit a pull request following the repo's contribution guidelines. Reviews the diff,
   checks for common rejection reasons, and helps the user write their own PR description.
   The LLM reviews. the user writes. Use when implementation is complete and tests pass.
+  Not for responding to review comments after the PR is open. Use oss-post-pr
+  for that.
 ---
 
 # Submit PR

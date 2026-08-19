@@ -5,6 +5,8 @@ description: |
   them. Finds patterns, explains concepts in context, and points to examples in the
   codebase. Use when a repo uses frameworks, languages, or patterns you haven't
   worked with before.
+  Not for mapping a repo's architecture or domain language. Use
+  oss-explore-repo for that.
 ---
 
 # Learn Stack
