@@ -65,7 +65,54 @@ Extract PR-specific requirements:
 - Required reviewers or labels
 - CI checks that must pass
 
-### 2. Pre-flight checks
+### 2. Find the gates that are not in the docs
+
+CONTRIBUTING.md describes the rules a human will judge the PR by. The rules a bot
+enforces live in `.github/workflows/`, and they fail a PR that is otherwise fine,
+often with an error that does not say what it wants.
+
+```bash
+# Scan every workflow for the gates below in one pass
+for f in $(gh api repos/{owner}/{repo}/contents/.github/workflows \
+             --jq '.[] | select(.type == "file") | .name'); do
+  hits=$(gh api "repos/{owner}/{repo}/contents/.github/workflows/$f" --jq '.content' \
+         | base64 -d 2>/dev/null \
+         | grep -oiE 'semantic-pull-request|issue-link|signed-off-by|cla-assistant|towncrier|changeset|commitlint' \
+         | sort -u | tr '\n' ' ')
+  [ -n "$hits" ] && echo "$f: $hits"
+done
+
+# Then read any workflow that matched, to see what it actually requires
+gh api repos/{owner}/{repo}/contents/.github/workflows/{file} --jq '.content' | base64 -d
+```
+
+A hit is a lead, not a verdict. Read the workflow it names and find the condition
+it fails on.
+
+Each of these rejects a correct patch, so find them before writing anything:
+
+| Gate | What it demands | What to grep the workflows for |
+|------|-----------------|--------------------------------|
+| Semantic PR title | Title shaped `fix: ...` or `feat: ...` | `semantic-pull-request`, `semantic-pr` |
+| Linked issue | The body must reference an issue | `issue-link`, a step named like "Validate PR to Issue link" |
+| DCO | Every commit carries `Signed-off-by` | `dco`, `signed-off-by` |
+| CLA | An agreement signed before review | `cla-assistant`, `contributor-assistant` |
+| Changelog entry | A news fragment or CHANGELOG edit | `towncrier`, `changeset`, `changelog` |
+| Commit lint | Commit messages match a convention | `commitlint`, `conventional` |
+| Branch naming | The branch matches a pattern | a step reading `github.head_ref` |
+
+Branch protection adds requirements that no file in the repo mentions:
+
+```bash
+gh api repos/{owner}/{repo}/rulesets --jq '.[] | "\(.name)\t\(.target)"' 2>/dev/null
+```
+
+**Tell the user what each gate requires before they write a line of code.** A DCO
+gate means `git commit -s` from the first commit. Finding out afterwards means
+rewriting every commit on the branch. A changelog gate means an extra file that
+reviewers will ask for anyway.
+
+### 3. Pre-flight checks
 
 Run every check the CI will run. locally, before pushing:
 
@@ -102,7 +149,7 @@ not open a competing PR. Say so in a comment, offer to review theirs, and move o
 to the next issue. Losing a few days of work is cheaper than the reputation of
 someone who races other contributors.
 
-### 3. Review the diff
+### 4. Review the diff
 
 Go through the entire diff and flag issues:
 
@@ -129,7 +176,7 @@ For each issue found, present it to the user with the exact location:
 
 Don't auto-fix. Tell the user what and where.
 
-### 4. Verify commit conventions
+### 5. Verify commit conventions
 
 ```bash
 # Check commit messages against repo conventions
@@ -143,7 +190,7 @@ If the repo uses conventional commits and the user's messages don't conform, exp
 git log upstream/main..HEAD --format='%B' | grep -c 'Signed-off-by'
 ```
 
-### 5. Thinking gate: user writes the PR description
+### 6. Thinking gate: user writes the PR description
 
 **The user writes the PR description, not the LLM.**
 
@@ -160,7 +207,7 @@ Tell the user:
 
 Wait for the user to write it.
 
-### 6. Review the PR description
+### 7. Review the PR description
 
 Once the user has written their description, review it for **conciseness and clarity**:
 
@@ -185,7 +232,7 @@ Give specific feedback:
 
 Don't rewrite it. give feedback and let the user revise.
 
-### 7. Submit
+### 8. Submit
 
 Once the description passes review:
 
@@ -203,7 +250,7 @@ EOF
 )"
 ```
 
-### 8. Post-submission verification
+### 9. Post-submission verification
 
 ```bash
 # Check CI status
@@ -252,8 +299,9 @@ Present these before submission as a final checklist:
 
 ## Verification Checklist
 
+- [ ] Workflow gates identified (semantic title, DCO, linked issue, changelog) (step 2)
 - [ ] Issue re-checked: still open, still unassigned, no competing PR opened
-      while the user was implementing (step 2)
+      while the user was implementing (step 3)
 - [ ] All local tests pass (including new tests)
 - [ ] Lint/formatting passes locally
 - [ ] Diff only touches files relevant to the issue (no scope creep)
