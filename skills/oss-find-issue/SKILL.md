@@ -141,6 +141,45 @@ Three rules decide the close calls:
   truncated, or you cannot tell who a referenced PR belongs to, treat the issue as
   taken. Guessing is how the user ends up in a race they did not know they entered.
 
+**Scan the comments mechanically.** Reading every comment by hand stops working
+past a handful of candidates:
+
+```bash
+CLAIM='(?i)(i.ll take|i will take|can i (work on|take|have|be assigned)|(i.d|i would) like to (work on|take|try|tackle|pick up)|please assign|/assign|working on (this|it)|i (have |.ve )?(opened|raised|submitted) a (pr|pull request)|taking (this|it) (up|on))'
+
+gh issue view {number} -R {owner}/{repo} --json comments \
+  | jq -r --arg re "$CLAIM" '[.comments[] | select(.body | test($re)) | .author.login] | unique | .[]'
+```
+
+An empty result is not proof the issue is free. Somebody can open a PR without ever
+commenting, which is what the timeline check catches. Run both, always.
+
+**If the label is a race, stop using the label.** In a popular repo a
+`good first issue` is watched by hundreds of people and claimed within hours of
+being applied. Count the claimants across the whole current crop before investing
+in any single one:
+
+```bash
+for n in $(gh issue list -R {owner}/{repo} --label "good first issue" --state open \
+             --limit 10 --json number --jq '.[].number'); do
+  c=$(gh issue view $n -R {owner}/{repo} --json comments \
+      | jq -r --arg re "$CLAIM" '[.comments[] | select(.body | test($re)) | .author.login] | unique | length')
+  echo "#$n claimants: $c"
+done
+```
+
+Several issues carrying two or more distinct claimants means the label is a
+feeding frenzy and the user is arriving late. Two ways out, both better than
+racing:
+
+- **Pick an issue with no beginner label.** They draw far less traffic, and a
+  plain maintainer-filed bug is worth more to the project than a curated starter
+  task. The user is usually more capable than the label assumes.
+- **Stop picking and start finding.** `oss-find-real-issues` sources work nobody
+  has filed yet, and nobody can race the user for an issue that does not exist.
+  In repos where every labeled issue is triple-claimed, this is the faster path,
+  not the fallback.
+
 **Going quiet does not release a claim.** Someone who claimed an issue three weeks
 ago and disappeared still holds it, unless a maintainer has explicitly reopened it
 to others. Do not open a competing PR, do not prepare one "just in case", and do
@@ -241,7 +280,7 @@ this for the same reason.
 - Zero external PRs merged in recent history. repo may not actually accept outside contributions
 - User can't explain why they picked a specific issue. they're optimizing for "easy" instead of "learning value"
 - Issue has 5+ comments saying "I'll work on this" with no PRs. something about this issue makes people give up
-- A labeled issue in a busy repo picked up several claims within hours. it is a race, and the user is starting late
+- Two or more distinct claimants on several open beginner-labeled issues. the label is farmed, and picking from it wastes the user's time
 - The timeline call fails or returns nothing on an issue that clearly has linked PRs. the facts are not established, so the issue is not clear
 
 ## Verification Checklist
