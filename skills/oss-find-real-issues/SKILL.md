@@ -160,7 +160,59 @@ If the user disagrees with a finding:
 
 > "Good. that's a valid call. Can you explain why you think it's not an issue? Understanding why something ISN'T a problem is just as valuable."
 
-### 6. Fetch issue templates
+### 6. Verify the finding before it becomes an issue
+
+A finding the user believes is not a finding the repo will accept. Filing a report
+that turns out to be intended behaviour costs the user credibility that takes
+months to rebuild, and it costs a maintainer the time to explain it. Three checks,
+all of them, on every finding. Any one failing kills the report.
+
+**Reproduce it.** Write the smallest thing that shows the behaviour: a failing
+test, a script, a command with its output. A finding that cannot be demonstrated
+is a guess about code the user has read, not a problem the repo has.
+
+**Search prior art, closed as well as open.** Closed is where the answer usually
+is, because somebody already asked and a maintainer already explained why it is
+this way.
+
+```bash
+gh search issues --repo {owner}/{repo} --state open   "{keyword}" --limit 20
+gh search issues --repo {owner}/{repo} --state closed "{keyword}" --limit 20
+gh search prs    --repo {owner}/{repo} --state closed "{keyword}" --limit 20
+```
+
+Search the symbol, the error text, and the plain-language description separately.
+They surface different threads. A `merged` PR in those results means it is already
+fixed on the default branch and the user is reading a release.
+
+**Check whether it is deliberate.** The most common false positive is behaviour a
+test already asserts, which means somebody decided it on purpose:
+
+```bash
+# Does a test pin the behaviour the user is about to call a bug?
+grep -rn "{symbol}" test/ tests/ spec/ __tests__/ 2>/dev/null
+
+# Snapshot and inline-snapshot tests are the ones that catch people out
+grep -rln "snapshot\|golden\|approved\|__snapshots__" test/ tests/ 2>/dev/null
+
+# Was it written this way on purpose, and does the commit say why?
+git log -S "{the exact symbol or line}" --oneline -- {path}
+```
+
+If a test asserts the current behaviour, it is a design decision until a
+maintainer says otherwise. The user may still disagree with it, but the report is
+then "I think this decision is wrong, here is why", which is a different
+conversation from "this is broken", and it gets a different reception.
+
+> "Before we file this, show me:
+> 1. The reproduction. What exactly did you run, and what did you see?
+> 2. What did the closed issues and PRs say about it?
+> 3. Is there a test asserting the current behaviour? If yes, why is the decision wrong?"
+
+A finding that cannot answer all three does not get filed. Drop it, or go back to
+step 2 and gather what is missing.
+
+### 7. Fetch issue templates
 
 Before filing, check if the repo has issue templates:
 
@@ -189,7 +241,7 @@ Ask the user: "Which template matches the issue you're filing?" Fetch the select
 
 **If no templates exist**: use the freeform issue format below.
 
-### 7. File issues or proceed to fix
+### 8. File issues or proceed to fix
 
 For findings the user validates:
 
@@ -199,7 +251,7 @@ Help the user write an issue description (they write it, LLM reviews). If a temp
 
 **Issue writing rules:**
 - Title: what's wrong, in under 10 words. Not "Issue with...". State the problem directly
-- Body: reproduction steps or code reference, expected vs actual behavior, that's it
+- Body: the reproduction from step 6, expected vs actual behavior, that's it
 - No filler, no "I believe", no "it seems like". State facts
 - No AI jargon: "comprehensive", "robust", "fundamental". Cut all of it
 - If you can't describe the issue in 5 lines, you don't understand it well enough yet
@@ -221,7 +273,7 @@ Then → `oss-find-issue` (claim the issue they just filed) → `oss-contribute`
 
 → `oss-contribute` directly. skip to the implementation phase
 
-### 8. Track findings
+### 9. Track findings
 
 Maintain a summary:
 
@@ -249,6 +301,8 @@ Maintain a summary:
 |----------|-------------|
 | "I found a code smell, let me just fix it and submit a PR" | Uninvited PRs for subjective improvements get rejected. File an issue first. let the maintainer confirm it's wanted before you invest time in a fix. |
 | "The security scanner found 50 issues, let me file them all" | Scanner output without analysis is noise. Most findings are false positives or low-severity. Filing 50 issues burns maintainer goodwill. Filter ruthlessly, present only actionable findings. |
+| "It's obviously wrong, I don't need to reproduce it" | Reading code and running it are different. Half of "obvious" findings turn out to be handled somewhere the reader did not look. |
+| "I searched the open issues, nobody reported it" | Closed issues are where maintainers explain why something is the way it is. Searching open only is how the same report gets filed for the fourth time. |
 | "This is obviously a bug, I don't need the user to evaluate it" | What looks like a bug might be intentional behavior, a known trade-off, or a design decision with context you don't have. The user's evaluation catches these before you embarrass yourself in an issue. |
 | "Any test coverage improvement is welcome" | Testing trivial getters or obvious constructors wastes reviewer time. Focus on critical untested code paths. error handling, edge cases, security-relevant logic. |
 | "I'll file the issue and fix it in the same PR" | Separate concerns. The issue gets maintainer buy-in. The PR delivers the fix. Combining them skips the "is this actually wanted?" check. |
@@ -266,6 +320,9 @@ Maintain a summary:
 - [ ] Each finding has a specific file:line reference
 - [ ] Each finding has a clear impact statement (what could go wrong)
 - [ ] User evaluated each finding and gave a reasoned verdict
+- [ ] Every finding reproduced, not just read (step 6)
+- [ ] Open and closed issues and PRs searched for prior art (step 6)
+- [ ] Checked whether a test already asserts the behaviour (step 6)
 - [ ] High-severity findings were filed as issues (if repo requires it)
 - [ ] Issue descriptions follow repo template (if one exists)
 - [ ] Findings summary table maintained with user verdicts and actions
@@ -273,6 +330,9 @@ Maintain a summary:
 ## Anti-patterns
 
 - **DO NOT** file issues for style preferences. "I'd do it differently" is not an issue
+- **DO NOT** file a finding that was never reproduced. reading the code is not evidence
+- **DO NOT** search only open issues. the explanation is usually in a closed one
+- **DO NOT** call behaviour a bug when a test asserts it. that is a disagreement with a decision, and it is argued differently
 - **DO NOT** file issues without checking if the repo wants unsolicited contributions
 - **DO NOT** present findings as definitive problems. always let the user evaluate and decide
 - **DO NOT** submit fix PRs for issues you haven't filed first (unless the repo explicitly welcomes it)
