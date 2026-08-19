@@ -1,12 +1,12 @@
 # OSS-Skills
 
-**15 skills that walk you through your first open source contribution, and your tenth.** Install in 30 seconds on Claude Code, Codex, Cursor, Cline, Copilot, Windsurf, Zed, Gemini CLI or Kiro. Run `/oss-find-issue`. The skill handles the research, you handle the thinking.
+**15 skills that walk you through your first open source contribution, and your tenth.** Install in 30 seconds on Claude Code, Codex, Cursor, Cline, Copilot, Windsurf, Zed, Gemini CLI or Kiro. Start with `oss-find-issue`. The skill handles the research, you handle the thinking.
 
 Built by a GSoC mentor who got tired of watching contributors make the same avoidable mistakes - picking issues nobody maintains, skipping CONTRIBUTING.md, submitting PRs that ignore the repo's conventions, and not being able to explain their own code during review.
 
 These skills encode what I wish every contributor knew before their first submission.
 
-> **This is NOT a curated list or a collection of resources.** These are executable Claude Code skills you install and run. They search GitHub issues, read contribution docs, trace code paths, check if repos accept outside contributions, and ask you questions at every step. If you want a markdown list, this isn't it.
+> **This is NOT a curated list or a collection of resources.** These are executable skills you install and run. They search GitHub issues, read contribution docs, trace code paths, check if repos accept outside contributions, and ask you questions at every step. If you want a markdown list, this isn't it.
 
 ## See it work
 
@@ -65,6 +65,10 @@ Or paste this into Claude Code and it handles everything:
 > Install OSS-Skills: run `git clone https://github.com/chiruu12/OSS-Skills.git && cd OSS-Skills && ./setup`
 
 ## The skills
+
+Slash syntax is Claude Code. On every other tool there is no slash
+command: ask your agent for the workflow by name, such as "follow the
+oss-find-issue workflow".
 
 ### Evaluation
 
@@ -208,7 +212,7 @@ Read more: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 
 | Tool | Version | Why |
 |------|---------|-----|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Latest | Runs the skills |
+| An AI coding tool | - | Runs the skills. Claude Code, Cursor, Cline, Copilot, Windsurf, Zed, Gemini CLI, Kiro, or anything that reads `AGENTS.md`. See [Platform support](#platform-support) |
 | [Git](https://git-scm.com/) | 2.x+ | Clone, branch, commit |
 | [`gh` CLI](https://cli.github.com/) | 2.x+ | Issue search, PR creation, API calls |
 
@@ -220,7 +224,16 @@ Read more: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 
 **"gh: not logged in"** - Run `gh auth login` and follow the prompts.
 
-**Skills not showing up** - Check `ls ~/.claude/skills/oss-*`. Each should have a SKILL.md inside.
+**Skills not showing up** - Claude Code: `ls ~/.claude/skills/oss-*`, each should
+have a SKILL.md inside. Cursor, Cline, Windsurf, Kiro: look in the rules
+directory inside your project (`.cursor/rules/`, `.clinerules/`, and so on).
+Codex, Copilot, Zed, Gemini CLI: check that the router file (`AGENTS.md`,
+`.rules`, `GEMINI.md`, `.github/copilot-instructions.md`) contains the
+OSS-SKILLS block, and that `.oss-skills/` sits beside it.
+
+**Installed, but the agent never uses them** - Outside Claude Code nothing
+auto-routes. Name the workflow you want: "follow the oss-find-issue workflow".
+The router file tells your agent which file to open.
 
 **Token usage** - oss-contribute and oss-find-real-issues use Explore agents which consume more tokens on large codebases.
 
