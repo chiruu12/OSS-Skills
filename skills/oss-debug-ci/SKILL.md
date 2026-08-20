@@ -56,18 +56,25 @@ Map the pipeline:
 
 ### 2. Fetch the failure logs
 
+Your PR's CI runs on the upstream repo, not on your fork. Name the repo on every
+command. Without `-R`, `gh` guesses from your remotes, and in a fork clone it can
+guess your fork, which has no runs for this PR.
+
 ```bash
-# List recent CI runs for your PR
-gh run list --branch $(git branch --show-current) --limit 5
+# Start here. This maps each check to the run and job that produced it.
+gh pr checks {pr-number} -R {owner}/{repo}
+
+# Or list runs by head branch. Your fork's branch name is the head branch upstream.
+gh run list -R {owner}/{repo} --branch {your-branch} --limit 5
 
 # View the failed run
-gh run view {run-id}
+gh run view {run-id} -R {owner}/{repo}
 
 # Get the specific failure logs
-gh run view {run-id} --log-failed
+gh run view {run-id} -R {owner}/{repo} --log-failed
 
 # If you need the full log for a specific job
-gh run view {run-id} --log --job {job-id}
+gh run view {run-id} -R {owner}/{repo} --log --job {job-id}
 ```
 
 Isolate the actual error from surrounding noise. CI logs are verbose — most of the output is setup and teardown. The failure is usually in the last 20-50 lines of a failed step.
@@ -94,8 +101,8 @@ This is the critical question. Don't fix what isn't broken.
 
 ```bash
 # Check if the same job fails on main
-gh run list --branch main --limit 5 --workflow {workflow-name}
-gh run view {latest-main-run-id} --log-failed
+gh run list -R {owner}/{repo} --branch main --limit 5 --workflow {workflow-name}
+gh run view {latest-main-run-id} -R {owner}/{repo} --log-failed
 
 # Check if this test is known to be flaky
 gh issue list -R {owner}/{repo} --search "flaky {test-name}" --state open
@@ -162,8 +169,8 @@ git push
 
 ```bash
 # Watch the new CI run
-gh run list --branch $(git branch --show-current) --limit 1
-gh run watch {new-run-id}
+gh run list -R {owner}/{repo} --branch {your-branch} --limit 1
+gh run watch {new-run-id} -R {owner}/{repo}
 ```
 
 If it fails again with a DIFFERENT error: go back to step 2. CI pipelines are sequential — fixing one failure may reveal the next.
