@@ -146,10 +146,22 @@ past a handful of candidates:
 
 ```bash
 CLAIM='(?i)(i.ll take|i will take|can i (work on|take|have|be assigned)|(i.d|i would) like to (work on|take|try|tackle|pick up)|please assign|/assign|working on (this|it)|i (have |.ve )?(opened|raised|submitted) a (pr|pull request)|taking (this|it) (up|on))'
+BOT='(?i)(\[bot\]$|[-_]bot$|robot$|^bot$|[-_]ci$)'
 
-gh issue view {number} -R {owner}/{repo} --json comments \
-  | jq -r --arg re "$CLAIM" '[.comments[] | select(.body | test($re)) | .author.login] | unique | .[]'
+gh api repos/{owner}/{repo}/issues/{number}/comments --paginate \
+  | jq -r --arg re "$CLAIM" --arg bot "$BOT" \
+    '[.[] | select(.user.type != "Bot") | select(.user.login | test($bot) | not)
+      | select(.body | test($re)) | .user.login] | unique | .[]'
 ```
+
+Use the REST endpoint, not `gh issue view --json comments`. Two reasons. It strips
+the `[bot]` suffix from bot logins and gives you no type field, so from its output
+you cannot tell a bot from a person. And triage bots post the exact phrases in
+`CLAIM`, because instructing people to comment `/assign` is what they are for.
+
+`user.type` alone is not enough either. On `kubernetes/kubernetes` the prow bot
+reports `type: Bot` and gets filtered, while `k8s-ci-robot` reports `type: User`
+and does not. The login pattern is what catches the second one.
 
 An empty result is not proof the issue is free. Somebody can open a PR without ever
 commenting, which is what the timeline check catches. Run both, always.
@@ -162,8 +174,10 @@ in any single one:
 ```bash
 for n in $(gh issue list -R {owner}/{repo} --label "good first issue" --state open \
              --limit 10 --json number --jq '.[].number'); do
-  c=$(gh issue view $n -R {owner}/{repo} --json comments \
-      | jq -r --arg re "$CLAIM" '[.comments[] | select(.body | test($re)) | .author.login] | unique | length')
+  c=$(gh api repos/{owner}/{repo}/issues/$n/comments --paginate \
+      | jq -r --arg re "$CLAIM" --arg bot "$BOT" \
+        '[.[] | select(.user.type != "Bot") | select(.user.login | test($bot) | not)
+          | select(.body | test($re)) | .user.login] | unique | length')
   echo "#$n claimants: $c"
 done
 ```

@@ -74,10 +74,11 @@ often with an error that does not say what it wants.
 ```bash
 # Scan every workflow for the gates below in one pass
 for f in $(gh api repos/{owner}/{repo}/contents/.github/workflows \
-             --jq '.[] | select(.type == "file") | .name'); do
+             --jq '.[] | select(.type == "file") | .name
+                   | select(test("\\.ya?ml$"))'); do
   hits=$(gh api "repos/{owner}/{repo}/contents/.github/workflows/$f" --jq '.content' \
          | base64 -d 2>/dev/null \
-         | grep -oiE 'semantic-pull-request|issue-link|signed-off-by|cla-assistant|towncrier|changeset|commitlint' \
+         | grep -oiE 'semantic-pull-request|semantic-pr|issue-link|signed-off-by|[-/]dco|cla-assistant|contributor-assistant|towncrier|changeset|commitlint' \
          | sort -u | tr '\n' ' ')
   [ -n "$hits" ] && echo "$f: $hits"
 done
