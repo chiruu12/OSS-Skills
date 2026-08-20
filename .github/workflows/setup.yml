@@ -45,6 +45,40 @@ jobs:
 
       - name: Every skill has the sections the docs promise, in order
         run: |
+          cat > gate.awk <<'AWK'
+          # A skill can lose a gate three ways, so there are three rules:
+          #   1. every labelled gate step carries its own question, so a
+          #      question belonging to a different gate cannot cover for a
+          #      missing one
+          #   2. the skill is marked as having gates at all
+          #   3. at least one question survives somewhere
+          # oss-explore-repo keeps its gates inline under ordinary step
+          # headings and indexes them in a `## Thinking Gates` section, so that
+          # section counts as a marker. Its inline gates are not covered by
+          # rule 1, which is the one gap left here.
+          /^## / || /^### / {
+            if (inblock && !hasq) {
+              printf "::error::%s:%d gate step has no question: %s\n", FILE, start, title
+              bad++
+            }
+            inblock = 0
+          }
+          /^### .*[Tt]hinking [Gg]ate/ {
+            inblock = 1; hasq = 0; start = FNR; title = $0; marks++
+          }
+          /^## Thinking Gates/ { marks++ }
+          /^> "/ { questions++; if (inblock) hasq = 1 }
+          END {
+            if (inblock && !hasq) {
+              printf "::error::%s:%d gate step has no question: %s\n", FILE, start, title
+              bad++
+            }
+            if (marks == 0) { printf "::error::%s has no thinking gate\n", FILE; bad++ }
+            if (questions == 0) { printf "::error::%s has no gate question\n", FILE; bad++ }
+            exit (bad > 0)
+          }
+          AWK
+
           fail=0
           want='Purpose|Prerequisites|Process|Related Skills|Common Rationalizations|Red Flags|Verification Checklist|Anti-patterns|'
           for f in skills/oss-*/SKILL.md; do
@@ -59,15 +93,9 @@ jobs:
               echo "::error::  got:  $got"
               fail=1; }
 
-            # A gate is a labelled step plus the question it asks. Requiring
-            # both means deleting the step is caught even when some other
-            # quoted block survives elsewhere in the file.
-            if grep -qiE '^### .*thinking gate' "$f" || grep -qE '^## Thinking Gates' "$f"; then :; else
-              echo "::error::$f has no thinking gate heading"; fail=1
-            fi
-            grep -q '^> "' "$f" || {
-              echo "::error::$f has no thinking gate question (a line starting '> \"')"; fail=1; }
+            awk -v FILE="$f" -f gate.awk "$f" || fail=1
           done
+          rm -f gate.awk
           exit $fail
 
       - name: Install every target
