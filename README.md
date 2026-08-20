@@ -244,8 +244,9 @@ OSS-SKILLS block, and that `.oss-skills/` sits beside it.
 auto-routes. Name the workflow you want: "follow the oss-find-issue workflow".
 The router file tells your agent which file to open.
 
-**Token usage** - oss-explore-repo, oss-prep-to-contribute and oss-find-real-issues
-use Explore agents, which consume more tokens on large codebases.
+**Token usage** - oss-contribute, oss-explore-repo, oss-prep-to-contribute and
+oss-find-real-issues use Explore agents, which consume more tokens on large
+codebases.
 
 ## Contributing
 
