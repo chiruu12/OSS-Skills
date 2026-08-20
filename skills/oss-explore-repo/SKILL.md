@@ -5,6 +5,8 @@ description: |
   and domain language before contributing. Not issue-specific. builds general
   understanding. Use when exploring a new repo, wanting to understand how a
   project works, or preparing to become a regular contributor.
+  Not for learning a framework or language you have never used. Use
+  oss-learn-stack for that.
 ---
 
 # Explore Repo

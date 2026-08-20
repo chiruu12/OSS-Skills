@@ -5,6 +5,8 @@ description: |
   Searches for issues created by maintainers/org admins, checks contribution eligibility,
   and ranks by learning value. Use when looking for an issue to contribute to, starting
   OSS contributions, or finding GSoC-friendly issues.
+  Not for finding problems that nobody has filed an issue for yet. Use
+  oss-find-real-issues for that.
 ---
 
 # Find Issue

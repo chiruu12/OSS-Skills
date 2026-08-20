@@ -4,6 +4,8 @@ description: |
   Prepare to contribute to an open source repo. Reads all contribution docs, checks
   eligibility, assesses the user's knowledge gaps, and fills them before coding starts.
   Use after finding an issue with oss-find-issue, or when starting work on any OSS repo.
+  Not for installing dependencies or getting the build and tests running. Use
+  oss-setup-dev-env for that.
 ---
 
 # Prep to Contribute

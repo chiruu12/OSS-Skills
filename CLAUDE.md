@@ -101,3 +101,9 @@ Targets that use one instruction file (`agents`, `gemini`, `copilot`, `zed`) wri
 - Every `gh` command must include `-R {owner}/{repo}` for explicit repo targeting
 - Thinking gates use blockquote format (`> "Question to ask the user"`)
 - Anti-patterns section is mandatory - it prevents skills from drifting toward code generation
+- Every description ends with a `Not for X. Use Y for that.` sentence, naming the
+  skill it is most often confused with. It is what stops the wrong skill firing
+  on tools that route by description, which is most of them
+- That sentence goes last. `skill_notfor` carries everything from `Not for` to
+  the end of the description into the router, so anything written after it lands
+  in the router too

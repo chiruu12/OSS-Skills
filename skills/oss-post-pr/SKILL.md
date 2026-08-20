@@ -5,6 +5,8 @@ description: |
   and help the user address them. The LLM explains what reviewers want and why; the user
   decides how to respond and writes the code. Use when you receive review comments on
   a submitted PR.
+  Not for opening the PR in the first place, which is oss-submit-pr. If the
+  feedback is a failing CI job, use oss-debug-ci.
 ---
 
 # Post-PR Review

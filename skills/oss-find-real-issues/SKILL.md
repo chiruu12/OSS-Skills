@@ -5,6 +5,7 @@ description: |
   inconsistent patterns, outdated dependencies, documentation gaps. Presents findings to
   the user for evaluation. Use when you want to make proactive contributions beyond
   existing issues, or when no good issues are available.
+  Not for browsing the existing issue tracker. Use oss-find-issue for that.
 ---
 
 # Find Real Issues

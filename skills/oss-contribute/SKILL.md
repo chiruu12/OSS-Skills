@@ -5,6 +5,8 @@ description: |
   The LLM investigates code paths, finds relevant files, explains patterns, and identifies
   constraints. The user thinks through the approach and implements it. Use when ready to
   start working on an issue after oss-prep-to-contribute.
+  Not for writing tests or documentation as a standalone contribution. Use
+  oss-write-tests or oss-write-docs for those.
 ---
 
 # Contribute

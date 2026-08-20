@@ -53,7 +53,7 @@ keep in context for a single question. So `setup` splits them:
 - a small router file (`AGENTS.md`, `GEMINI.md`, `.rules`, and so on) lists what
   each skill is for and tells the agent to open the matching file
 
-The router is about 3KB. Your agent loads one workflow when it needs it instead
+The router is about 4KB. Your agent loads one workflow when it needs it instead
 of carrying all fifteen. Cursor, Cline, Windsurf and Kiro use their own
 per-file rule directories, so those get one file per skill with no router.
 
