@@ -43,6 +43,22 @@ jobs:
           done
           exit $fail
 
+      - name: Every skill has the sections the docs promise
+        run: |
+          fail=0
+          for f in skills/oss-*/SKILL.md; do
+            for s in Purpose Prerequisites Process "Related Skills" \
+                     "Common Rationalizations" "Red Flags" \
+                     "Verification Checklist" Anti-patterns; do
+              grep -qi "^## $s\$" "$f" || {
+                echo "::error::$f has no '## $s' section"; fail=1; }
+            done
+            # Gates are the whole point of the project, so every skill needs one.
+            grep -q '^> "' "$f" || {
+              echo "::error::$f has no thinking gate (a line starting '> \"')"; fail=1; }
+          done
+          exit $fail
+
       - name: Install every target
         run: |
           count=$(ls -d skills/oss-*/ | wc -l | tr -d ' ')

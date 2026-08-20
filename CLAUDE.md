@@ -20,8 +20,10 @@ OSS-Skills/
 │   ├── oss-find-real-issues/      # Find code issues not in the tracker
 │   ├── oss-explore-repo/          # Guided codebase exploration (architecture, patterns)
 │   └── oss-learn-stack/           # Learn unfamiliar tech from the repo's own code
-├── docs/                          # Documentation
+├── docs/                          # PLATFORMS.md, PHILOSOPHY.md
+├── .github/workflows/setup.yml    # Installs every target on Ubuntu and macOS
 ├── setup                          # Install script (bash)
+├── AGENTS.md                      # Hand written, for agents reading this repo itself
 ├── CLAUDE.md                      # This file
 ├── CONTRIBUTING.md                # How to contribute
 ├── LICENSE                        # MIT
@@ -40,14 +42,23 @@ description: |
 ---
 ```
 
-Sections within each SKILL.md:
-1. **Title + one-liner** - what this skill does
-2. **Purpose** - why it exists, what problem it solves
-3. **Prerequisites** - what the user needs before invoking
-4. **Process** - numbered steps with clear phases
-5. **Thinking Gates** - points where user must articulate understanding
-6. **Related Skills** - how this connects to the other skills
-7. **Anti-patterns** - what this skill explicitly does NOT do
+Sections within each SKILL.md, in order. All fifteen skills carry all eight:
+
+1. **Purpose** - why it exists, what problem it solves
+2. **Prerequisites** - what the user needs before invoking
+3. **Process** - numbered steps with clear phases
+4. **Related Skills** - how this connects to the other skills
+5. **Common Rationalizations** - a table of shortcuts and why each one fails
+6. **Red Flags** - signs the user is going wrong, for the LLM to watch for
+7. **Verification Checklist** - what must be true before the skill is done
+8. **Anti-patterns** - what this skill explicitly does NOT do
+
+A title and one-line summary sit above Purpose. Seven skills add a **When to
+Use** section after Purpose; it is optional.
+
+Thinking gates are not a section. They are numbered steps inside Process, headed
+`### N. Thinking gate - <what the user must articulate>`, and there is at least
+one in every skill.
 
 ## Core principle
 
@@ -88,7 +99,7 @@ Skills are written against Claude Code (Agent tool, Skill tool, Explore agents),
 ./setup --target claude|agents|cursor|cline|copilot|windsurf|zed|gemini|kiro
 ```
 
-Targets that use one instruction file (`agents`, `gemini`, `copilot`, `zed`) write each workflow to `.oss-skills/<skill>.md` and generate a small router that indexes them, because 15 concatenated skills is about 150KB. Targets with their own rules directory (`cursor`, `cline`, `windsurf`, `kiro`) get one file per skill and no router.
+Targets that use one instruction file (`agents`, `gemini`, `copilot`, `zed`) write each workflow to `.oss-skills/<skill>.md` and generate a small router that indexes them, because 15 concatenated skills is about 170KB. Targets with their own rules directory (`cursor`, `cline`, `windsurf`, `kiro`) get one file per skill and no router.
 
 `--target agents` writes `AGENTS.md`, the open format under the Agentic AI Foundation that roughly 25 tools read. Use it for anything without a dedicated target.
 
@@ -98,7 +109,9 @@ Targets that use one instruction file (`agents`, `gemini`, `copilot`, `zed`) wri
 
 - Read existing skills before editing - match the structure and tone
 - Every code example must use `{placeholder}` syntax for user-specific values
-- Every `gh` command must include `-R {owner}/{repo}` for explicit repo targeting
+- Every `gh` command that acts on a repo must name it explicitly, with `-R`,
+  `--repo`, or positionally. Never rely on `gh` inferring it from the checkout:
+  in a fork clone it infers the fork, which is the wrong repo for issues and CI
 - Thinking gates use blockquote format (`> "Question to ask the user"`)
 - Anti-patterns section is mandatory - it prevents skills from drifting toward code generation
 - Every description ends with a `Not for X. Use Y for that.` sentence, naming the
