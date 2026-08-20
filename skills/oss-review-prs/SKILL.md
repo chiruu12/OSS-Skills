@@ -44,8 +44,9 @@ gh pr list -R {owner}/{repo} --state open --json number,title,author,labels,revi
   --jq '.[] | "\(.number)\t\(.additions)+\(.deletions)\t\(.author.login)\t\(.title)"'
 
 # PRs from first-time contributors (maintainers appreciate help reviewing these)
-gh pr list -R {owner}/{repo} --state open --json number,title,author,authorAssociation \
-  --jq '.[] | select(.authorAssociation == "FIRST_TIME_CONTRIBUTOR" or .authorAssociation == "FIRST_TIMER") | "\(.number)\t\(.author.login)\t\(.title)"'
+gh api "repos/{owner}/{repo}/pulls?state=open&per_page=30" \
+  --jq '.[] | select(.author_association == "FIRST_TIME_CONTRIBUTOR" or .author_association == "NONE")
+        | "#\(.number)\t\(.user.login)\t\(.title)"'
 
 # PRs without any reviews yet
 gh pr list -R {owner}/{repo} --state open --json number,title,reviews \

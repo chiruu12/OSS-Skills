@@ -106,6 +106,57 @@ gh issue list -R {owner}/{repo} --state closed --limit 5 --json number,comments 
   done
 ```
 
+**Does an outsider actually get merged?** This is the single question the rest of
+the section is circling, and it needs counting rather than eyeballing. Note that
+`gh pr list` has no `authorAssociation` field. Use the REST API:
+
+```bash
+gh api "repos/{owner}/{repo}/pulls?state=closed&per_page=100" \
+  | jq -r '[.[] | select(.merged_at != null)]
+           | "sample: \(length) merges out of the last 100 closed PRs",
+             (group_by(.author_association)[] | "  \(length)\t\(.[0].author_association)")'
+
+# Then the humans behind the outside slice. Bots are not evidence of anything
+gh api "repos/{owner}/{repo}/pulls?state=closed&per_page=100" \
+  --jq '.[] | select(.merged_at != null) | select(.user.type != "Bot")
+        | select(.author_association != "MEMBER" and .author_association != "OWNER")
+        | .user.login' | sort | uniq -c | sort -rn
+```
+
+Read the sample size before the split. That endpoint pages over *closed* PRs, and
+closed is not merged: on `cli/cli` the last 100 closed contain 63 merges, on
+`pydantic-ai` 46. Rejected PRs skew toward outsiders, so the merged slice is
+always smaller than the page and never a clean hundred. Quote the number you
+actually got.
+
+`author_association` describes permissions on this repo, not employment, so it
+does not answer the question on its own. A paid maintainer without write access
+to this particular repo shows up as `CONTRIBUTOR`, or even `NONE`. Check the
+logins before believing the split:
+
+```bash
+gh api users/{login} --jq '"\(.login)\tcompany: \(.company // "-")"'
+
+# Public membership only. Private members return nothing, so a miss proves nothing
+gh api orgs/{owner}/members/{login} --silent 2>/dev/null && echo member || echo "not public"
+```
+
+What the numbers mean:
+
+- **Drop the bots first.** Dependabot and Renovate merge constantly and count as
+  outside contributors. On `cli/cli` they are 25 of the 32 non-member merges. Filter
+  them out and the real figure is five distinct strangers, not thirty-two.
+- **Count distinct outside logins, not merged PRs.** Twenty merges from one prolific
+  outsider says that person is trusted. It says nothing about the next stranger.
+- **A high count of one-PR authors is ambiguous.** Read what those PRs changed. If
+  they are typos, dependency bumps and README edits, the repo is absorbing drive-by
+  churn rather than welcoming contributors, and a real patch will be treated
+  differently.
+- **Zero outside authors across a real sample is the answer.** Whatever
+  CONTRIBUTING.md says, this repo does not merge strangers. Pick another one. If
+  the sample came back under about 30 merges, it is too small to conclude that
+  from. Page further back before writing the repo off.
+
 **Healthy signals**:
 - Issues get responses within a week
 - PRs get reviewed within 2 weeks

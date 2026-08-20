@@ -180,6 +180,34 @@ If the reviewer requests a fundamentally different approach:
 4. Let the user decide whether to rework or discuss further with the reviewer
 5. If reworking, hand off to → `oss-contribute` for a fresh investigation of the new approach
 
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "The reviewer is wrong, I'll explain why" | Sometimes they are. Write the explanation first and read it back: if it does not cite the code, it is a defence of the effort already spent, not an argument, and it will read that way. |
+| "I'll just make every change they asked for" | Blind compliance produces a patch the user cannot defend at the next round. Understand what each comment wants before touching anything. |
+| "It's only a nit, I'll skip it" | Unaddressed nits accumulate and read as not listening. Fix it, or say plainly why not. Silence is the one option that costs you. |
+| "No response in a week, I'll ping every day" | One polite bump after a reasonable wait. Daily pings get the thread muted and the PR forgotten. |
+| "I'll rewrite the whole thing to be safe" | A large unexplained rewrite between review rounds forces the reviewer to start over, and they will resent it. Change what was asked for. |
+
+## Red Flags
+
+- User is editing code without being able to say what the reviewer asked for
+- A review comment contains a term the user cannot define. stop and use `oss-learn-stack`
+- More than three review rounds on a small diff. the disagreement is about the approach, not the details, and it needs saying out loud
+- User pushes back on every comment. it reads as defensive regardless of who is right
+- Reviewer has gone quiet after the user argued. the tone landed badly, not the argument
+
+## Verification Checklist
+
+- [ ] All feedback fetched, including inline comments and review-level bodies (step 1)
+- [ ] Each comment categorized blocking, suggestion, or question (step 2)
+- [ ] User explained in their own words what each blocking comment wants (step 4 gate)
+- [ ] Reviewer questions answered directly rather than deflected into code changes (step 5)
+- [ ] User wrote the changes. the LLM researched and reviewed (step 6)
+- [ ] Every thread has a response, including ones declined with a stated reason
+- [ ] CI green after re-submission (step 8)
+
 ## Related Skills
 
 - **Previous step**: ← `oss-submit-pr` - the PR submission

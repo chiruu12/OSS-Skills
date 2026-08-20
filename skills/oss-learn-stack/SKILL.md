@@ -165,6 +165,34 @@ Quick comprehension check:
 
 If the user can answer all three, they're ready to contribute. If not, revisit the relevant concept.
 
+## Common Rationalizations
+
+| Shortcut | Why It Fails |
+|----------|-------------|
+| "I'll read the official docs instead" | Docs teach the framework's happy path. This repo uses a subset of it, with local conventions layered on top. Code that is idiomatic for the docs and wrong for the repo is worse than code that is merely wrong, because it looks deliberate. |
+| "I already know this framework" | Knowing the framework is not knowing how this repo uses it. The gap that costs you a review round is always the local convention, never the language. |
+| "I'll learn it when I hit it" | You hit it halfway through the implementation, and the patch that comes out reads like it was written by someone guessing. Reviewers can tell. |
+| "I found one example, that is the pattern" | One example might be the outlier nobody has cleaned up yet. Find a second before copying it. |
+| "I'll just ask the LLM to explain the concept" | A general explanation is what the docs already gave you. The point of this skill is the explanation grounded in this codebase's own files. |
+
+## Red Flags
+
+- User cannot find a second example of a concept unaided. the first one was not understood, only read
+- The stack list has run past ten items. that is a repo tour, not a gap list, and none of it will stick
+- User is reading framework tutorials in another tab instead of the repo's code
+- The cheat sheet is copied from documentation rather than written from the repo's usage
+- Every explanation ends with the user saying "makes sense" and asking nothing
+
+## Verification Checklist
+
+- [ ] Stack identified from the repo's own manifests and configs, not assumed (step 1)
+- [ ] Gaps named by the user, not guessed at on their behalf (step 2)
+- [ ] Every concept taught points at a real `file:line` in this repo (step 3)
+- [ ] User found an additional example of the concept without help (step 4 gate)
+- [ ] Concepts connected to the area the user's issue actually touches (step 5)
+- [ ] Cheat sheet written by the user, in their words, from this repo's code (step 6)
+- [ ] User can say what they still do not know (step 7)
+
 ## Related Skills
 
 - **Triggered from**: ← `oss-prep-to-contribute`: when knowledge check reveals unfamiliar technology
