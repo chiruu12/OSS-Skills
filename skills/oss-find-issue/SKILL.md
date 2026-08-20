@@ -184,12 +184,17 @@ in any single one:
 for n in $(gh issue list -R {owner}/{repo} --label "good first issue" --state open \
              --limit 10 --json number --jq '.[].number'); do
   c=$(gh api repos/{owner}/{repo}/issues/$n/comments --paginate \
-      | jq -r --arg re "$CLAIM" --arg bot "$BOT" \
-        '[.[] | select(.user.type != "Bot") | select(.user.login | test($bot) | not)
+      | jq -r --arg re "$CLAIM" \
+        '[.[] | select(.user.type != "Bot")
           | select(.body | test($re)) | .user.login] | unique | length')
   echo "#$n claimants: $c"
 done
 ```
+
+This count drops only logins GitHub itself marks as bots, and keeps the
+`$BOT` heuristic out of it. Here the two errors are not symmetric: a claimant
+wrongly counted costs the user a label they could have used, while a claimant
+wrongly dropped walks them into a race. Count high.
 
 Several issues carrying two or more distinct claimants means the label is a
 feeding frenzy and the user is arriving late. Two ways out, both better than
