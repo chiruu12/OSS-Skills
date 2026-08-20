@@ -24,7 +24,9 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
 1. Read the full skill before editing
 2. Keep the eight sections every skill has, in this order: Purpose, Prerequisites,
    Process, Related Skills, Common Rationalizations, Red Flags, Verification
-   Checklist, Anti-patterns. Some skills add a `When to Use` section after Purpose.
+   Checklist, Anti-patterns. Extra sections are fine - several skills add a
+   `When to Use` after Purpose - but the eight must be present and in that order.
+   CI checks this.
 3. Check that cross-references to other skills remain valid
 4. Verify thinking gates still exist - removing them violates the core principle.
    Gates are numbered steps inside Process, not a section of their own. They are

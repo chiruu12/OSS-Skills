@@ -182,6 +182,15 @@ If the reviewer requests a fundamentally different approach:
 4. Let the user decide whether to rework or discuss further with the reviewer
 5. If reworking, hand off to → `oss-contribute` for a fresh investigation of the new approach
 
+## Related Skills
+
+- **Previous step**: ← `oss-submit-pr` - the PR submission
+- **If significant rework**: → `oss-contribute` - re-investigate with the new approach
+- **If minor fixes**: → `oss-submit-pr` - re-verify and push updates
+- **If CI fails**: → `oss-debug-ci` - diagnose and fix CI pipeline failures
+- **After merge**: → `oss-second-contribution` - plan your next contribution and build trust
+- **Loop**: This skill may be invoked multiple times per PR as new reviews come in
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails |
@@ -209,15 +218,6 @@ If the reviewer requests a fundamentally different approach:
 - [ ] User wrote the changes. the LLM researched and reviewed (step 6)
 - [ ] Every thread has a response, including ones declined with a stated reason
 - [ ] CI green after re-submission (step 8)
-
-## Related Skills
-
-- **Previous step**: ← `oss-submit-pr` - the PR submission
-- **If significant rework**: → `oss-contribute` - re-investigate with the new approach
-- **If minor fixes**: → `oss-submit-pr` - re-verify and push updates
-- **If CI fails**: → `oss-debug-ci` - diagnose and fix CI pipeline failures
-- **After merge**: → `oss-second-contribution` - plan your next contribution and build trust
-- **Loop**: This skill may be invoked multiple times per PR as new reviews come in
 
 ## Anti-patterns
 

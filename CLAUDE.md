@@ -53,12 +53,15 @@ Sections within each SKILL.md, in order. All fifteen skills carry all eight:
 7. **Verification Checklist** - what must be true before the skill is done
 8. **Anti-patterns** - what this skill explicitly does NOT do
 
-A title and one-line summary sit above Purpose. Seven skills add a **When to
-Use** section after Purpose; it is optional.
+A title and one-line summary sit above Purpose. A skill may add sections beyond
+the eight: seven add **When to Use** after Purpose, and some carry output
+templates inside Process. Extra sections are fine; the eight above must all be
+present and in that order.
 
-Thinking gates are not a section. They are numbered steps inside Process, headed
-`### N. Thinking gate - <what the user must articulate>`, and there is at least
-one in every skill.
+Thinking gates are usually not a section of their own. They are numbered steps
+inside Process, headed `### N. Thinking gate - <what the user must articulate>`,
+and there is at least one in every skill. `oss-explore-repo` also collects its
+gates into a `## Thinking Gates` section, which is allowed.
 
 ## Core principle
 
