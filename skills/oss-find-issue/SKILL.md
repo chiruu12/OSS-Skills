@@ -150,8 +150,11 @@ BOT='(?i)(\[bot\]$|[-_]bot$|robot$|^bot$|[-_]ci$)'
 
 gh api repos/{owner}/{repo}/issues/{number}/comments --paginate \
   | jq -r --arg re "$CLAIM" --arg bot "$BOT" \
-    '[.[] | select(.user.type != "Bot") | select(.user.login | test($bot) | not)
-      | select(.body | test($re)) | .user.login] | unique | .[]'
+    '[.[] | select(.body | test($re))]
+     | (map(select(.user.type != "Bot") | select(.user.login | test($bot) | not))
+        | map(.user.login) | unique | .[] | "claimant: \(.)")
+     , (map(select(.user.type == "Bot" or (.user.login | test($bot))))
+        | map(.user.login) | unique | .[] | "check by hand: \(.)")'
 ```
 
 Use the REST endpoint, not `gh issue view --json comments`. Two reasons. It strips
@@ -162,6 +165,12 @@ you cannot tell a bot from a person. And triage bots post the exact phrases in
 `user.type` alone is not enough either. On `kubernetes/kubernetes` the prow bot
 reports `type: Bot` and gets filtered, while `k8s-ci-robot` reports `type: User`
 and does not. The login pattern is what catches the second one.
+
+The login pattern is a guess, so it reports rather than discards. A person can be
+called `nick-ci` or `deathrobot`, and silently dropping them would turn a claimed
+issue into an available-looking one, which is the expensive direction to be wrong
+in. Anything on a `check by hand` line, open the issue and read those comments
+yourself.
 
 An empty result is not proof the issue is free. Somebody can open a PR without ever
 commenting, which is what the timeline check catches. Run both, always.
