@@ -43,19 +43,30 @@ jobs:
           done
           exit $fail
 
-      - name: Every skill has the sections the docs promise
+      - name: Every skill has the sections the docs promise, in order
         run: |
           fail=0
+          want='Purpose|Prerequisites|Process|Related Skills|Common Rationalizations|Red Flags|Verification Checklist|Anti-patterns|'
           for f in skills/oss-*/SKILL.md; do
-            for s in Purpose Prerequisites Process "Related Skills" \
-                     "Common Rationalizations" "Red Flags" \
-                     "Verification Checklist" Anti-patterns; do
-              grep -qi "^## $s\$" "$f" || {
-                echo "::error::$f has no '## $s' section"; fail=1; }
-            done
-            # Gates are the whole point of the project, so every skill needs one.
+            # Presence, order and duplicates in one comparison. Extra sections
+            # such as `When to Use` are dropped by the filter and ignored.
+            got=$(grep '^## ' "$f" | sed 's/^## //' \
+                  | grep -xE 'Purpose|Prerequisites|Process|Related Skills|Common Rationalizations|Red Flags|Verification Checklist|Anti-patterns' \
+                  | tr '\n' '|')
+            [ "$got" = "$want" ] || {
+              echo "::error::$f sections are wrong."
+              echo "::error::  want: $want"
+              echo "::error::  got:  $got"
+              fail=1; }
+
+            # A gate is a labelled step plus the question it asks. Requiring
+            # both means deleting the step is caught even when some other
+            # quoted block survives elsewhere in the file.
+            if grep -qiE '^### .*thinking gate' "$f" || grep -qE '^## Thinking Gates' "$f"; then :; else
+              echo "::error::$f has no thinking gate heading"; fail=1
+            fi
             grep -q '^> "' "$f" || {
-              echo "::error::$f has no thinking gate (a line starting '> \"')"; fail=1; }
+              echo "::error::$f has no thinking gate question (a line starting '> \"')"; fail=1; }
           done
           exit $fail
 
