@@ -148,6 +148,34 @@ jobs:
           done
           exit $fail
 
+      - name: Rules directories carry the frontmatter their editor parses
+        run: |
+          # A rule the editor cannot classify never auto-attaches, and that
+          # failure is silent: the file installs, and nothing reports it.
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          ./setup --target windsurf --dest "$d" >/dev/null
+          fail=0
+          for f in "$d"/.cursor/rules/*.mdc; do
+            head -20 "$f" | grep -q '^alwaysApply: false$' \
+              || { echo "::error::$(basename "$f") has no alwaysApply"; fail=1; }
+            head -20 "$f" | grep -q '^globs:$' \
+              || { echo "::error::$(basename "$f") has no globs"; fail=1; }
+            if head -20 "$f" | grep -q '^name:'; then
+              echo "::error::$(basename "$f") kept the Claude-only name key"
+              fail=1
+            fi
+          done
+          for f in "$d"/.windsurf/rules/*.md; do
+            head -20 "$f" | grep -q '^trigger: model_decision$' \
+              || { echo "::error::$(basename "$f") has no trigger"; fail=1; }
+          done
+          for f in "$d"/.cursor/rules/*.mdc "$d"/.windsurf/rules/*.md; do
+            head -20 "$f" | grep -q '^description:' \
+              || { echo "::error::$(basename "$f") has no description"; fail=1; }
+          done
+          exit $fail
+
       - name: Existing project instructions survive installation
         run: |
           fail=0

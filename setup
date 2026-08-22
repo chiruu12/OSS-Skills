@@ -393,13 +393,53 @@ install_router() {
 # records exactly what was written, so the next run can drop a renamed skill
 # without guessing from filenames. Anything setup did not write is left alone,
 # including a file the user happens to have named oss-something.
+# The `description:` key and its continuation lines, verbatim. Reusing the
+# source block avoids re-quoting a description that contains colons, commas
+# and em dashes, any of which would need escaping if rebuilt as a plain scalar.
+skill_desc_block() {
+  awk '
+    /^description:/ { print; indesc = 1; next }
+    indesc && /^[a-zA-Z_-]+:/ { exit }
+    indesc && /^---/ { exit }
+    indesc { print }
+  ' "$SKILLS_DIR/$1/SKILL.md"
+}
+
+# Frontmatter in the format the target actually parses. The source SKILL.md
+# carries `name:` and `description:`, which is what Claude Code and Kiro read.
+# Cursor and Windsurf parse neither, so a copied SKILL.md installs and works
+# when named in chat but never auto-attaches. Both are given a description-
+# driven trigger here, which is the right mode for these skills: they fire on
+# what the user is doing, not on which file is open, so globs stay empty.
+skill_frontmatter() {
+  local fmt="$1" name="$2"
+  echo "---"
+  case "$fmt" in
+    cursor)
+      skill_desc_block "$name"
+      echo "globs:"
+      echo "alwaysApply: false"
+      ;;
+    windsurf)
+      echo "trigger: model_decision"
+      skill_desc_block "$name"
+      ;;
+    *)
+      echo "name: $name"
+      skill_desc_block "$name"
+      ;;
+  esac
+  echo "---"
+}
+
 install_split() {
-  local dir="$1" ext="$2" name
+  local dir="$1" ext="$2" fmt="${3:-default}" name
   managed_dir "$ROOT" "$dir"
   reset_managed "$dir"
   for name in $(skill_names); do
     writable_file "$dir/$name.$ext"
-    cp "$SKILLS_DIR/$name/SKILL.md" "$dir/$name.$ext"
+    { skill_frontmatter "$fmt" "$name"; echo; skill_body "$name"; } \
+      > "$dir/$name.$ext"
     record_managed "$dir/$name.$ext"
   done
 }
@@ -512,7 +552,7 @@ case "$TARGET" in
     ;;
 
   cursor)
-    install_split "$ROOT/.cursor/rules" mdc
+    install_split "$ROOT/.cursor/rules" mdc cursor
     WHERE="$ROOT/.cursor/rules/"
     NOTE="Reference a workflow in chat, for example: follow the oss-contribute skill."
     ;;
@@ -524,7 +564,7 @@ case "$TARGET" in
     ;;
 
   windsurf)
-    install_split "$ROOT/.windsurf/rules" md
+    install_split "$ROOT/.windsurf/rules" md windsurf
     WHERE="$ROOT/.windsurf/rules/"
     NOTE="Windsurf loads .windsurf/rules/ automatically."
     ;;
