@@ -155,6 +155,9 @@ jobs:
           # parse the frontmatter rather than grepping it, and compare the body
           # against the source: a truncated description or a half-written file
           # would satisfy a key-presence check and still be broken.
+          # The macOS runner ships a python3 without PyYAML.
+          python3 -c 'import yaml' 2>/dev/null \
+            || python3 -m pip install --quiet --disable-pip-version-check pyyaml
           d=$(mktemp -d)
           ./setup --target cursor --dest "$d" >/dev/null
           ./setup --target windsurf --dest "$d" >/dev/null
