@@ -155,13 +155,20 @@ jobs:
           # parse the frontmatter rather than grepping it, and compare the body
           # against the source: a truncated description or a half-written file
           # would satisfy a key-presence check and still be broken.
-          # The macOS runner ships a python3 without PyYAML.
-          python3 -c 'import yaml' 2>/dev/null \
-            || python3 -m pip install --quiet --disable-pip-version-check pyyaml
+          # The macOS runner ships a python3 without PyYAML, and its python is
+          # externally managed, so pip refuses to add one. A throwaway venv is
+          # the one way in that does not need a flag telling pip to ignore that.
+          py=python3
+          if ! python3 -c 'import yaml' 2>/dev/null; then
+            v=$(mktemp -d)
+            python3 -m venv "$v"
+            "$v/bin/pip" install --quiet --disable-pip-version-check pyyaml
+            py="$v/bin/python"
+          fi
           d=$(mktemp -d)
           ./setup --target cursor --dest "$d" >/dev/null
           ./setup --target windsurf --dest "$d" >/dev/null
-          DEST="$d" python3 - <<'PY'
+          DEST="$d" "$py" - <<'PY'
           import os, pathlib, sys, yaml
 
           dest = pathlib.Path(os.environ["DEST"])
