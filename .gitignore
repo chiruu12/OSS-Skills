@@ -1,19 +1,21 @@
 # Local agent-fleet state. Never belongs in the repo: fleet.config.yaml and
 # teams/ carry machine-local client paths, and .marshal/ holds run logs.
-.ledger/
-.marshal/
-teams/
-fleet.config.yaml
+/.ledger/
+/.marshal/
+/teams/
+/fleet.config.yaml
 
-# What `setup` writes when you test it against this checkout.
-.claude/
-.clinerules/
-.cursor/
-.kiro/
-.oss-skills/
-.rules
-.windsurf/
-GEMINI.md
-.github/copilot-instructions.md
+# What `setup` writes when you test it against this checkout. Anchored, because
+# these names are only install output at the root. A `GEMINI.md` or `.rules`
+# added under a source or fixture directory is a real file and should show up.
+/.claude/
+/.clinerules/
+/.cursor/
+/.kiro/
+/.oss-skills/
+/.rules
+/.windsurf/
+/GEMINI.md
+/.github/copilot-instructions.md
 
 .DS_Store
