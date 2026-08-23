@@ -224,6 +224,41 @@ record_managed() {
   echo "$(file_hash "$1")  $(basename "$1")" >> "$(dirname "$1")/.oss-skills-manifest"
 }
 
+# The claude target installs oss-<skill>/SKILL.md rather than a flat file, so
+# reset_managed cannot clean up after it: that one rejects any manifest entry
+# containing a slash. Same two proofs applied one directory deeper, a name setup
+# owns and a checksum that still matches. Without this a skill retired upstream
+# stays in ~/.claude/skills and keeps being offered to the agent forever.
+reset_managed_skills() {
+  local dir="$1" sum name
+  no_symlink "$dir/.oss-skills-manifest"
+  if [ -f "$dir/.oss-skills-manifest" ]; then
+    while read -r sum name || [ -n "$sum" ]; do
+      case "$name" in
+        *..*) continue ;;
+        oss-*/SKILL.md) ;;
+        *) continue ;;
+      esac
+      case "$sum" in *[!0-9a-f]*) continue ;; esac
+      [ "${#sum}" -eq 64 ] || continue
+      # The directory too: a symlinked oss-<skill>/ would put the rm outside dir.
+      [ ! -L "$dir/${name%/SKILL.md}" ] || continue
+      [ -f "$dir/$name" ] && [ ! -L "$dir/$name" ] || continue
+      [ "$(file_hash "$dir/$name")" = "$sum" ] || continue
+      rm -f "$dir/$name"
+      # Only if nothing of yours is left in it.
+      rmdir "$dir/${name%/SKILL.md}" 2>/dev/null || true
+    done < "$dir/.oss-skills-manifest"
+  fi
+  : > "$dir/.oss-skills-manifest"
+}
+
+record_managed_skill() {
+  local dir="$1" name="$2"
+  echo "$(file_hash "$dir/$name/SKILL.md")  $name/SKILL.md" \
+    >> "$dir/.oss-skills-manifest"
+}
+
 # Writes .oss-skills/<name>.md for every skill, into \$1. Skills that no longer
 # exist are dropped, so a rename does not leave the old workflow behind. Files
 # setup did not write are left alone, even if they are named oss-something.
@@ -470,17 +505,21 @@ case "$TARGET" in
       # people symlink ~/.claude into a dotfiles repo on purpose.
       DIR="$ROOT/.claude/skills"
       managed_dir "$ROOT" "$DIR"
+      reset_managed_skills "$DIR"
       for name in $(skill_names); do
         managed_dir "$ROOT" "$DIR/$name"
         writable_file "$DIR/$name/SKILL.md"
         cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+        record_managed_skill "$DIR" "$name"
       done
     else
       DIR="$HOME/.claude/skills"
       mkdir -p "$DIR"
+      reset_managed_skills "$DIR"
       for name in $(skill_names); do
         mkdir -p "$DIR/$name"
         cp "$SKILLS_DIR/$name/SKILL.md" "$DIR/$name/SKILL.md"
+        record_managed_skill "$DIR" "$name"
       done
     fi
     WHERE="$DIR"

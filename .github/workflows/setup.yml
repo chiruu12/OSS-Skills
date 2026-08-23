@@ -148,6 +148,66 @@ jobs:
           done
           exit $fail
 
+      - name: A retired skill is removed, yours are not
+        run: |
+          # The claude target installs oss-<skill>/SKILL.md, one level deeper
+          # than the flat manifest handles, so it went years without a reset.
+          # A skill dropped upstream then stayed in ~/.claude/skills forever.
+          # Same fallback setup itself uses, so the planted hashes match.
+          h() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1"; \
+                else sha256sum "$1"; fi | cut -d" " -f1; }
+          src=$(mktemp -d); cp -R . "$src/repo"
+          d=$(mktemp -d)
+          "$src/repo/setup" --target claude --local --dest "$d" >/dev/null
+          s="$d/.claude/skills"
+
+          mkdir -p "$s/my-own-skill"; echo mine > "$s/my-own-skill/SKILL.md"
+          mkdir -p "$s/oss-my-fork"; echo mine > "$s/oss-my-fork/SKILL.md"
+          echo notes > "$s/oss-debug-ci/NOTES.md"
+          # The case the checksum exists for: a managed skill you edited, which
+          # is then retired upstream. The manifest names it, so only the hash
+          # mismatch stops the delete. Nothing else here tests that.
+          echo "my edit" >> "$s/oss-write-tests/SKILL.md"
+
+          rm -rf "$src/repo/skills/oss-write-docs"
+          rm -rf "$src/repo/skills/oss-write-tests"
+          "$src/repo/setup" --target claude --local --dest "$d" >/dev/null
+
+          fail=0
+          [ -d "$s/oss-write-docs" ] && {
+            echo "::error::a skill retired upstream was left behind"; fail=1; }
+          grep -q "my edit" "$s/oss-write-tests/SKILL.md" 2>/dev/null \
+            || { echo "::error::setup deleted a retired skill you had edited"; fail=1; }
+          for keep in my-own-skill/SKILL.md oss-my-fork/SKILL.md oss-debug-ci/NOTES.md; do
+            [ -e "$s/$keep" ] || { echo "::error::setup deleted $keep"; fail=1; }
+          done
+          # A manifest is untrusted input: it can arrive inside a repo you
+          # cloned, naming a file of yours and carrying its real checksum. The
+          # name rule is what confines the delete to the oss-<skill>/SKILL.md
+          # namespace setup already owns and overwrites.
+          d2=$(mktemp -d)
+          "$src/repo/setup" --target claude --local --dest "$d2" >/dev/null
+          s2="$d2/.claude/skills"
+          mkdir -p "$s2/secrets"; echo "keep me" > "$s2/secrets/SKILL.md"
+          hash=$(h "$s2/secrets/SKILL.md")
+          printf '%s  secrets/SKILL.md\n' "$hash" >> "$s2/.oss-skills-manifest"
+          "$src/repo/setup" --target claude --local --dest "$d2" >/dev/null
+          [ -f "$s2/secrets/SKILL.md" ] \
+            || { echo "::error::a planted manifest entry deleted a file setup never wrote"; fail=1; }
+
+          # Same trick one level up: the name is in the namespace and the hash
+          # matches, but oss-<skill>/ is a symlink, so the delete would land
+          # outside the skills directory entirely.
+          out=$(mktemp -d); echo "keep me too" > "$out/SKILL.md"
+          hash2=$(h "$out/SKILL.md")
+          ln -s "$out" "$s2/oss-planted"
+          printf '%s  oss-planted/SKILL.md\n' "$hash2" >> "$s2/.oss-skills-manifest"
+          "$src/repo/setup" --target claude --local --dest "$d2" >/dev/null
+          [ -f "$out/SKILL.md" ] \
+            || { echo "::error::a symlinked skill directory let the delete escape"; fail=1; }
+
+          exit $fail
+
       - name: Existing project instructions survive installation
         run: |
           fail=0
