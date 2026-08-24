@@ -583,6 +583,17 @@ jobs:
           [ -f "$out/SKILL.md" ] \
             || { echo "::error::a symlinked skill directory let the delete escape"; fail=1; }
 
+          # Deeper than one level. A `*` in a case pattern matches slashes, so
+          # the namespace rule on its own admits oss-x/link/sub/SKILL.md, and
+          # the symlink check then looks at `sub` while `link` does the escaping.
+          out2=$(mktemp -d); mkdir -p "$out2/sub"; echo "keep me three" > "$out2/sub/SKILL.md"
+          hash3=$(h "$out2/sub/SKILL.md")
+          mkdir -p "$s2/oss-nested"; ln -s "$out2" "$s2/oss-nested/link"
+          printf '%s  oss-nested/link/sub/SKILL.md\n' "$hash3" >> "$s2/.oss-skills-manifest"
+          "$src/repo/setup" --target claude --local --dest "$d2" >/dev/null
+          [ -f "$out2/sub/SKILL.md" ] \
+            || { echo "::error::a nested manifest path let the delete escape"; fail=1; }
+
           exit $fail
 
       - name: An unusable skills tree is reported, not exited silently

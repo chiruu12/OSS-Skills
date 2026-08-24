@@ -236,6 +236,10 @@ reset_managed_skills() {
     while read -r sum name || [ -n "$sum" ]; do
       case "$name" in
         *..*) continue ;;
+        # One level, and one only. A `*` in a case pattern matches slashes too,
+        # so oss-*/SKILL.md alone accepts oss-x/link/sub/SKILL.md, and the
+        # symlink check below then looks at `sub` while `link` is the escape.
+        */*/*) continue ;;
         oss-*/SKILL.md) ;;
         *) continue ;;
       esac
