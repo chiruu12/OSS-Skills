@@ -148,6 +148,97 @@ jobs:
           done
           exit $fail
 
+      - name: Rules directories carry the frontmatter their editor parses
+        run: |
+          # A rule the editor cannot classify never auto-attaches, and that
+          # failure is silent: the file installs, and nothing reports it. So
+          # parse the frontmatter rather than grepping it, and compare the body
+          # against the source: a truncated description or a half-written file
+          # would satisfy a key-presence check and still be broken.
+          # The macOS runner ships a python3 without PyYAML, and its python is
+          # externally managed, so pip refuses to add one. A throwaway venv is
+          # the one way in that does not need a flag telling pip to ignore that.
+          py=python3
+          if ! python3 -c 'import yaml' 2>/dev/null; then
+            v=$(mktemp -d)
+            python3 -m venv "$v"
+            "$v/bin/pip" install --quiet --disable-pip-version-check pyyaml
+            py="$v/bin/python"
+          fi
+          d=$(mktemp -d)
+          ./setup --target cursor --dest "$d" >/dev/null
+          ./setup --target windsurf --dest "$d" >/dev/null
+          DEST="$d" "$py" - <<'PY'
+          import os, pathlib, sys, yaml
+
+          dest = pathlib.Path(os.environ["DEST"])
+          skills = pathlib.Path("skills")
+          fail = []
+
+          def split(text, where):
+              if not text.startswith("---\n"):
+                  fail.append(f"{where}: no frontmatter")
+                  return None, None
+              end = text.find("\n---\n", 3)
+              if end == -1:
+                  fail.append(f"{where}: frontmatter is not closed")
+                  return None, None
+              return text[4:end + 1], text[end + 5:]
+
+          for target, ext, required in (
+              ("cursor", "mdc", {"description", "globs", "alwaysApply"}),
+              ("windsurf", "md", {"description", "trigger"}),
+          ):
+              files = sorted((dest / f".{target}" / "rules").glob(f"*.{ext}"))
+              names = sorted(p.name for p in skills.iterdir() if p.is_dir())
+              if len(files) != len(names):
+                  fail.append(f"{target}: installed {len(files)} rules, expected {len(names)}")
+
+              for f in files:
+                  fm_text, body = split(f.read_text(), f"{target}/{f.name}")
+                  if fm_text is None:
+                      continue
+                  try:
+                      fm = yaml.safe_load(fm_text)
+                  except yaml.YAMLError as e:
+                      fail.append(f"{target}/{f.name}: frontmatter is not valid YAML: {e}")
+                      continue
+                  if not isinstance(fm, dict):
+                      fail.append(f"{target}/{f.name}: frontmatter is not a mapping")
+                      continue
+
+                  if set(fm) != required:
+                      fail.append(
+                          f"{target}/{f.name}: keys {sorted(fm)}, expected {sorted(required)}"
+                      )
+                  if not str(fm.get("description") or "").strip():
+                      fail.append(f"{target}/{f.name}: description is empty")
+                  if target == "cursor":
+                      if fm.get("alwaysApply") is not False:
+                          fail.append(
+                              f"{target}/{f.name}: alwaysApply is {fm.get('alwaysApply')!r},"
+                              " expected the boolean False"
+                          )
+                      if fm.get("globs") not in (None, ""):
+                          fail.append(f"{target}/{f.name}: globs should be empty")
+                  else:
+                      if fm.get("trigger") != "model_decision":
+                          fail.append(f"{target}/{f.name}: trigger is {fm.get('trigger')!r}")
+
+                  src = skills / f.stem / "SKILL.md"
+                  if not src.exists():
+                      fail.append(f"{target}/{f.name}: no source skill named {f.stem}")
+                      continue
+                  _, src_body = split(src.read_text(), str(src))
+                  if src_body is not None and body.strip() != src_body.strip():
+                      fail.append(f"{target}/{f.name}: body does not match {src}")
+
+          for line in fail:
+              print(f"::error::{line}")
+          print(f"{len(fail)} problems")
+          sys.exit(1 if fail else 0)
+          PY
+
       - name: Existing project instructions survive installation
         run: |
           fail=0

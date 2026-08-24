@@ -57,6 +57,16 @@ The router is about 4KB. Your agent loads one workflow when it needs it instead
 of carrying all fifteen. Cursor, Cline, Windsurf and Kiro use their own
 per-file rule directories, so those get one file per skill with no router.
 
+Those four get frontmatter in the format they actually parse: Cursor gets
+`description` plus `alwaysApply: false`, Windsurf gets `trigger: model_decision`.
+Both mean the same thing, pick this rule by what the user is asking for, not by
+which file is open, so `globs` stays empty.
+
+One caveat on Windsurf. It documents a 6,000 character cap per rule file and
+12,000 across all of them. These workflows run 9 to 17KB each, so Windsurf will
+truncate them no matter how the frontmatter is written. Use the `agents` target
+there instead, which routes to full files on demand.
+
 ## What is portable and what is not
 
 | | Every tool | Claude Code only |
