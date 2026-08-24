@@ -46,16 +46,17 @@ a particular runtime. The only external requirement is the `gh` CLI.
 
 ## How the non-Claude targets are laid out
 
-Concatenating 15 skills produces about 150KB of markdown, which is too much to
+Concatenating 15 skills produces about 170KB of markdown, which is too much to
 keep in context for a single question. So `setup` splits them:
 
 - `.oss-skills/<skill>.md` holds each full workflow
 - a small router file (`AGENTS.md`, `GEMINI.md`, `.rules`, and so on) lists what
   each skill is for and tells the agent to open the matching file
 
-The router is about 4KB. Your agent loads one workflow when it needs it instead
-of carrying all fifteen. Cursor, Cline, Windsurf and Kiro use their own
-per-file rule directories, so those get one file per skill with no router.
+The router is about 4KB, and a single workflow is 9 to 17KB. Your agent loads
+one workflow when it needs it instead of carrying all fifteen. Cursor, Cline,
+Windsurf and Kiro use their own per-file rule directories, so those get one file
+per skill with no router.
 
 Those four get frontmatter in the format they actually parse: Cursor gets
 `description` plus `alwaysApply: false`, Windsurf gets `trigger: model_decision`.

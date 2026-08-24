@@ -204,6 +204,13 @@ it belongs to, and none of them may be answered on the user's behalf.
 If the user cannot answer, go back into the code with them. Do not supply the
 answer and move on.
 
+## Related Skills
+
+- **Next step (found an issue)**: → `oss-find-issue`: find an issue that matches your new understanding
+- **Next step (find your own)**: → `oss-find-real-issues`: use your understanding to find real code problems
+- **If tech gaps surfaced**: → `oss-learn-stack`: learn unfamiliar technologies from the repo itself
+- **Issue-specific prep**: → `oss-prep-to-contribute`: once you have an issue, prepare specifically for it
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails |
@@ -232,13 +239,6 @@ answer and move on.
 - [ ] Recent history read. the user can say what maintainers have been working on (step 6)
 - [ ] Knowledge gaps named, each with a plan or a handoff to `oss-learn-stack` (step 7)
 - [ ] Personal map written down somewhere the user will find it again (step 8)
-
-## Related Skills
-
-- **Next step (found an issue)**: → `oss-find-issue`: find an issue that matches your new understanding
-- **Next step (find your own)**: → `oss-find-real-issues`: use your understanding to find real code problems
-- **If tech gaps surfaced**: → `oss-learn-stack`: learn unfamiliar technologies from the repo itself
-- **Issue-specific prep**: → `oss-prep-to-contribute`: once you have an issue, prepare specifically for it
 
 ## Anti-patterns
 

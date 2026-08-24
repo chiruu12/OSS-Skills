@@ -22,9 +22,15 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
 ### Editing a skill
 
 1. Read the full skill before editing
-2. Preserve the section structure: Purpose → Prerequisites → Process → Thinking Gates → Related Skills → Anti-patterns
+2. Keep the eight sections every skill has, in this order: Purpose, Prerequisites,
+   Process, Related Skills, Common Rationalizations, Red Flags, Verification
+   Checklist, Anti-patterns. Extra sections are fine - several skills add a
+   `When to Use` after Purpose - but the eight must be present and in that order.
+   CI checks this.
 3. Check that cross-references to other skills remain valid
-4. Verify thinking gates still exist - removing them violates the core principle
+4. Verify thinking gates still exist - removing them violates the core principle.
+   Gates are numbered steps inside Process, not a section of their own. They are
+   written as a blockquote: `> "Question to ask the user"`
 
 ### Adding a new skill
 
@@ -37,10 +43,13 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
      What it does. When to use it.
    ---
    ```
-3. Include all required sections (see CLAUDE.md for the list)
+3. Include all eight required sections (see CLAUDE.md for the list)
 4. Add cross-references to/from related skills
-5. Update README.md skill listing
-6. Update the setup script's SKILLS array
+5. Update the skill listing in README.md, CLAUDE.md and AGENTS.md. All three are
+   hand maintained and all three will otherwise go stale
+
+`setup` finds skills by globbing `skills/*/SKILL.md`, so there is no list to
+update. A new directory with valid frontmatter installs on every target.
 
 ### What NOT to change
 
@@ -51,7 +60,13 @@ No build step. Skills are plain Markdown files with YAML frontmatter.
 
 ## Testing
 
-The best test is using the skills on a real contribution:
+CI runs `.github/workflows/setup.yml` on every PR, across Ubuntu and macOS. It
+installs all nine targets, checks each one lands the right number of non-empty
+skill files, re-runs each to prove the install is idempotent, and confirms that
+an existing `AGENTS.md` survives. If you add a skill, that is what catches
+missing frontmatter.
+
+CI cannot tell you whether a skill is any good. For that:
 
 1. Install locally: `./setup --local`
 2. Try the full workflow on a real repo

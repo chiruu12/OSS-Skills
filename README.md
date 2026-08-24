@@ -10,6 +10,9 @@ These skills encode what I wish every contributor knew before their first submis
 
 ## See it work
 
+An abridged session. The issue numbers are invented, everything else is what
+the skills actually do.
+
 ```
 You:     /oss-find-issue
 Skill:   What languages do you know? Any specific repos, or want me to find one?
@@ -26,7 +29,13 @@ Skill:   Why that one? What do you think the fix involves?
          (Hint: look at the scope above - what about it matches your skills?)
 You:     I've worked with Click before. The description mentions argument groups
          which I dealt with in my last project...
-Skill:   Good. Claimed it. Run /oss-prep-to-contribute next.
+Skill:   Good. Re-checking nobody took it while we talked... still clear.
+         Some repos want a maintainer to assign instead. This one lets you
+         self-claim, so post a one-liner and keep it short:
+         "I'd like to work on this - looks like it's in the argument group
+          handling. Happy to take it if nobody else has started."
+You:     Posted.
+Skill:   Run /oss-prep-to-contribute next.
 
 You:     /oss-prep-to-contribute
 Skill:   [reads CONTRIBUTING.md, CODE_OF_CONDUCT, maps architecture]
@@ -52,7 +61,7 @@ That installs for Claude Code. For anything else, name it:
 
 ```bash
 ./setup --target cursor      # or cline, copilot, windsurf, zed, gemini, kiro
-./setup --target agents      # AGENTS.md, read by Codex, Aider, Goose, Amp and ~20 more
+./setup --target agents      # AGENTS.md, read by Codex, Aider, Goose, Amp and ~25 more
 ./setup --list               # every target
 ```
 
@@ -139,7 +148,7 @@ oss-find-issue workflow".
 
 Having reviewed contributions from both sides, here's what actually gets PRs rejected:
 
-1. **Picking orphaned issues.** Issues filed by random users often get closed without review. Issues from maintainers get prioritized. Every skill checks `authorAssociation` to filter for issues maintainers actually care about.
+1. **Picking orphaned issues.** Issues filed by random users often get closed without review. Issues from maintainers get prioritized. The skills that pick or triage issues - `oss-find-issue`, `oss-find-real-issues`, `oss-evaluate-repo`, `oss-prep-to-contribute` - read `authorAssociation` so you can tell which is which.
 
 2. **Skipping the docs.** CONTRIBUTING.md exists for a reason. Half of rejected PRs fail on process - wrong branch convention, missing sign-off, no linked issue. The prep skill reads every doc so you don't skip the one that matters.
 
@@ -187,7 +196,7 @@ All skills that create PRs, issues, or comments enforce:
 | **Zed** | `./setup --target zed` |
 | **Gemini CLI** | `./setup --target gemini` |
 | **Kiro** | `./setup --target kiro` |
-| **Codex, Aider, Goose, Amp, Jules, Junie, Devin, RooCode, Warp** | `./setup --target agents` |
+| **Codex, Aider, Goose, Amp, Jules, Junie, Devin, RooCode, Warp, Factory** | `./setup --target agents` |
 | **Anything else** | `./setup --target agents`, then paste if that fails |
 
 `--target agents` writes `AGENTS.md`, the open format stewarded by the Agentic AI
@@ -204,7 +213,7 @@ All skills are plain markdown, so the thinking gates and workflows work everywhe
 
 2. **Gate on understanding.** Before you code, explain the root cause. Before you submit, explain your approach. Before you address feedback, explain what the reviewer wants.
 
-3. **Eligibility first.** Every skill checks whether the repo accepts outside contributions, whether there's a CLA, and whether the issue is actually maintained. No wasted effort on PRs that never get reviewed.
+3. **Eligibility first.** Before you write anything, `oss-evaluate-repo` counts whether outsiders actually get merged, `oss-find-issue` checks the issue is unclaimed and maintainer-filed, and `oss-prep-to-contribute` finds the CLA and the process rules. No wasted effort on PRs that never get reviewed.
 
 Read more: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 
@@ -235,7 +244,9 @@ OSS-SKILLS block, and that `.oss-skills/` sits beside it.
 auto-routes. Name the workflow you want: "follow the oss-find-issue workflow".
 The router file tells your agent which file to open.
 
-**Token usage** - oss-contribute and oss-find-real-issues use Explore agents which consume more tokens on large codebases.
+**Token usage** - oss-contribute, oss-explore-repo, oss-prep-to-contribute and
+oss-find-real-issues use Explore agents, which consume more tokens on large
+codebases.
 
 ## Contributing
 

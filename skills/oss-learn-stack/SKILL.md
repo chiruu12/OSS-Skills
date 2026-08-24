@@ -167,6 +167,13 @@ Quick comprehension check:
 
 If the user can answer all three, they're ready to contribute. If not, revisit the relevant concept.
 
+## Related Skills
+
+- **Triggered from**: ← `oss-prep-to-contribute`: when knowledge check reveals unfamiliar technology
+- **Triggered from**: ← `oss-explore-repo`: when exploration reveals the user doesn't understand the stack
+- **Next step**: → `oss-contribute`: ready to work on the issue
+- **Pairs with**: `oss-explore-repo` (architecture understanding) + this skill (technology understanding) = full preparation
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails |
@@ -194,13 +201,6 @@ If the user can answer all three, they're ready to contribute. If not, revisit t
 - [ ] Concepts connected to the area the user's issue actually touches (step 5)
 - [ ] Cheat sheet written by the user, in their words, from this repo's code (step 6)
 - [ ] User can say what they still do not know (step 7)
-
-## Related Skills
-
-- **Triggered from**: ← `oss-prep-to-contribute`: when knowledge check reveals unfamiliar technology
-- **Triggered from**: ← `oss-explore-repo`: when exploration reveals the user doesn't understand the stack
-- **Next step**: → `oss-contribute`: ready to work on the issue
-- **Pairs with**: `oss-explore-repo` (architecture understanding) + this skill (technology understanding) = full preparation
 
 ## Anti-patterns
 
